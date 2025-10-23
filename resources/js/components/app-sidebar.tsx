@@ -54,12 +54,12 @@ const mainNavItems: NavItem[] = [
         icon: Users,
     },
     {
-        href: sellingIndex.url(),
+        href: purchaseIndex.url(),
         title: 'Pembelian',
         icon: Truck,
     },
     {
-        href: purchaseIndex.url(),
+        href: sellingIndex.url(),
         title: 'Penjualan',
         icon: ShoppingCart,
     },

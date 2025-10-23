@@ -34,18 +34,16 @@ import {
     addPurchase,
     deletePurchase,
     getCategories,
-    getProducts,
     getPurchases,
 } from '@/lib/storage';
-import type { Category, Product, Purchase } from '@/lib/types';
+import type { Category, Purchase } from '@/lib/types';
 import { dashboard } from '@/routes';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Package, Plus, Trash2, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-export default function PurchasesPage() {
-    const [products, setProducts] = useState<Product[]>([]);
+export default function PurchasesPage({ products }: any) {
     const [purchases, setPurchases] = useState<Purchase[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -55,6 +53,9 @@ export default function PurchasesPage() {
         quantity: '',
         unitPrice: '',
     });
+
+    console.log(formData);
+
     const [deleteConfirm, setDeleteConfirm] = useState<{
         open: boolean;
         id: string;
@@ -66,7 +67,6 @@ export default function PurchasesPage() {
     }, []);
 
     const loadData = () => {
-        setProducts(getProducts());
         setPurchases(getPurchases());
         setCategories(getCategories());
     };
@@ -128,19 +128,19 @@ export default function PurchasesPage() {
     };
 
     const getProductName = (productId: string) => {
-        return products.find((p) => p.id === productId)?.name || '-';
+        return products.find((p: any) => p.id === productId)?.name || '-';
     };
 
     const getProductCode = (productId: string) => {
-        return products.find((p) => p.id === productId)?.code || '-';
+        return products.find((p: any) => p.id === productId)?.code || '-';
     };
 
     const getCategoryName = (categoryId: string) => {
-        return categories.find((c) => c.id === categoryId)?.name || '-';
+        return categories.find((c: any) => c.id === categoryId)?.name || '-';
     };
 
     const getProductCategory = (productId: string) => {
-        return products.find((p) => p.id === productId)?.categoryId || '';
+        return products.find((p: any) => p.id === productId)?.categoryId || '';
     };
 
     const totalPurchaseValue = purchases.reduce(
@@ -410,12 +410,14 @@ export default function PurchasesPage() {
                                         <SelectValue placeholder="Pilih barang" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {products.map((product) => (
+                                        {products.map((product: any) => (
                                             <SelectItem
                                                 key={product.id}
                                                 value={product.id}
                                             >
-                                                {product.code} - {product.name}
+                                                {product.code} -{' '}
+                                                {product.category?.name} -{' '}
+                                                {product.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

@@ -11,14 +11,18 @@ class Barang extends Model
     use HasFactory;
 
     protected $fillable = [
-        'id',
         'code',
         'name',
-        'category_id',
-        'salesman_id',
+        'kategori_barang_id',
+        'sales_id',
         'price',
         'quantity',
         'unit',
         'description',
     ];
+
+    public function category()
+    {
+        return $this->belongsTo(KategoriBarang::class, 'kategori_barang_id');
+    }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Pembelian;
 use App\Http\Requests\StorePembelianRequest;
 use App\Http\Requests\UpdatePembelianRequest;
+use App\Models\Barang;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,7 +16,11 @@ class PembelianController extends Controller
      */
     public function index(): Response
     {
-        return Inertia::render('purchases/page');
+        $data = [
+            'products' => Barang::select(['code', 'name', 'kategori_barang_id'])->with('category:id,name')->get(),
+        ];
+
+        return Inertia::render('purchases/page', $data);
     }
 
     /**

@@ -1,7 +1,5 @@
 'use client';
 
-import type React from 'react';
-
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -21,13 +19,9 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import {
-    addProduct,
-    getCategories,
-    getSalesmen,
-    updateProduct,
-} from '@/lib/storage';
+import { addProduct, updateProduct } from '@/lib/storage';
 import type { Category, Product, Salesman } from '@/lib/types';
+import type React from 'react';
 import { useEffect, useState } from 'react';
 
 interface ProductDialogProps {
@@ -35,6 +29,8 @@ interface ProductDialogProps {
     onOpenChange: (open: boolean) => void;
     product?: Product | null;
     onClose: () => void;
+    initialSalesmen: Salesman[];
+    initialCategories: Category[];
 }
 
 export function ProductDialog({
@@ -42,32 +38,28 @@ export function ProductDialog({
     onOpenChange,
     product,
     onClose,
+    initialSalesmen,
+    initialCategories,
 }: ProductDialogProps) {
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [salesmen, setSalesmen] = useState<Salesman[]>([]);
     const [formData, setFormData] = useState({
         code: '',
         name: '',
-        categoryId: '',
-        salesmanId: '',
+        kategori_barang_id: 0,
+        sales_id: 0,
         price: '',
         unit: 'PCS' as const,
         description: '',
     });
-    const { toast } = useToast();
 
-    useEffect(() => {
-        setCategories(getCategories());
-        setSalesmen(getSalesmen());
-    }, []);
+    const { toast } = useToast();
 
     useEffect(() => {
         if (product) {
             setFormData({
                 code: product.code,
                 name: product.name,
-                categoryId: product.categoryId,
-                salesmanId: product.salesmanId || '',
+                kategori_barang_id: product.kategori_barang_id,
+                sales_id: product.sales_id ?? 0,
                 price: product.price.toString(),
                 unit: product.unit,
                 description: product.description || '',
@@ -76,8 +68,8 @@ export function ProductDialog({
             setFormData({
                 code: '',
                 name: '',
-                categoryId: '',
-                salesmanId: '',
+                kategori_barang_id: 0,
+                sales_id: 0,
                 price: '',
                 unit: 'PCS',
                 description: '',
@@ -91,7 +83,7 @@ export function ProductDialog({
         if (
             !formData.code ||
             !formData.name ||
-            !formData.categoryId ||
+            !formData.kategori_barang_id ||
             !formData.price
         ) {
             toast({
@@ -107,8 +99,8 @@ export function ProductDialog({
                 updateProduct(product.id, {
                     code: formData.code,
                     name: formData.name,
-                    categoryId: formData.categoryId,
-                    salesmanId: formData.salesmanId || undefined,
+                    kategori_barang_id: formData.kategori_barang_id,
+                    sales_id: formData.sales_id || undefined,
                     price: Number.parseFloat(formData.price),
                     unit: formData.unit,
                     description: formData.description,
@@ -119,14 +111,12 @@ export function ProductDialog({
                 });
             } else {
                 addProduct({
-                    code: formData.code,
-                    name: formData.name,
-                    categoryId: formData.categoryId,
-                    salesmanId: formData.salesmanId || undefined,
-                    price: Number.parseFloat(formData.price),
-                    quantity: 0,
-                    unit: formData.unit,
-                    description: formData.description,
+                    ...formData,
+                    kategori_barang_id: Number(formData.kategori_barang_id),
+                    sales_id: formData.sales_id
+                        ? Number(formData.sales_id)
+                        : undefined,
+                    price: Number(formData.price),
                 });
                 toast({
                     title: 'Berhasil',
@@ -192,17 +182,27 @@ export function ProductDialog({
                     <div className="space-y-2">
                         <Label htmlFor="category">Kategori</Label>
                         <Select
-                            value={formData.categoryId}
+                            value={
+                                formData.kategori_barang_id
+                                    ? String(formData.kategori_barang_id)
+                                    : ''
+                            }
                             onValueChange={(value) =>
-                                setFormData({ ...formData, categoryId: value })
+                                setFormData({
+                                    ...formData,
+                                    kategori_barang_id: Number(value),
+                                })
                             }
                         >
                             <SelectTrigger id="category">
                                 <SelectValue placeholder="Pilih kategori" />
                             </SelectTrigger>
                             <SelectContent>
-                                {categories.map((cat) => (
-                                    <SelectItem key={cat.id} value={cat.id}>
+                                {initialCategories.map((cat) => (
+                                    <SelectItem
+                                        key={cat.id}
+                                        value={String(cat.id)}
+                                    >
                                         {cat.name}
                                     </SelectItem>
                                 ))}
@@ -213,9 +213,17 @@ export function ProductDialog({
                     <div className="space-y-2">
                         <Label htmlFor="salesman">Sales (Opsional)</Label>
                         <Select
-                            value={formData.salesmanId}
+                            value={
+                                formData.sales_id
+                                    ? String(formData.sales_id)
+                                    : ''
+                            }
                             onValueChange={(value) =>
-                                setFormData({ ...formData, salesmanId: value })
+                                setFormData({
+                                    ...formData,
+                                    sales_id:
+                                        value === 'none' ? 0 : Number(value),
+                                })
                             }
                         >
                             <SelectTrigger id="salesman">
@@ -223,8 +231,8 @@ export function ProductDialog({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="none">Tidak ada</SelectItem>
-                                {salesmen.map((s) => (
-                                    <SelectItem key={s.id} value={s.id}>
+                                {initialSalesmen.map((s) => (
+                                    <SelectItem key={s.id} value={String(s.id)}>
                                         {s.name}
                                     </SelectItem>
                                 ))}
@@ -260,12 +268,8 @@ export function ProductDialog({
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="PCS">
-                                        PCS (Pcs)
-                                    </SelectItem>
-                                    <SelectItem value="KOLI">
-                                        KOLI (Kotak)
-                                    </SelectItem>
+                                    <SelectItem value="PCS">PCS</SelectItem>
+                                    <SelectItem value="KOLI">KOLI</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

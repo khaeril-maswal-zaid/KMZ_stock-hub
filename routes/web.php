@@ -22,6 +22,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('reports', [MorePagesController::class, 'laporan'])->name('report');
 
     Route::get('products', [BarangController::class, 'index'])->name('product.index');
+    Route::post('products/store', [BarangController::class, 'store'])->name('product.store');
 
     Route::get('purchases', [PembelianController::class, 'index'])->name('purchase.index');
 

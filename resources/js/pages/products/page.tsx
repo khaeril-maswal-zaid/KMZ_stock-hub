@@ -20,23 +20,20 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
-import {
-    deleteProduct,
-    getCategories,
-    getProducts,
-    getSalesmen,
-} from '@/lib/storage';
-import type { Category, Product, Salesman } from '@/lib/types';
+import { deleteProduct } from '@/lib/storage';
+import type { Product } from '@/lib/types';
 import { dashboard } from '@/routes';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Edit2, Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-export default function ProductsPage({ categories, salesman }: any) {
+export default function ProductsPage({
+    initialCategories,
+    initialSalesmen,
+}: any) {
     const [products, setProducts] = useState<Product[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [salesmen, setSalesmen] = useState<Salesman[]>([]);
+
     const [searchTerm, setSearchTerm] = useState('');
     const [stockFilter, setStockFilter] = useState<'all' | 'empty' | 'ready'>(
         'all',
@@ -51,14 +48,8 @@ export default function ProductsPage({ categories, salesman }: any) {
     const { toast } = useToast();
 
     useEffect(() => {
-        loadData();
+        // loadData();
     }, []);
-
-    const loadData = () => {
-        setProducts(getProducts());
-        setCategories(getCategories());
-        setSalesmen(getSalesmen());
-    };
 
     const handleDelete = (id: string) => {
         setDeleteConfirm({ open: true, id });
@@ -66,7 +57,7 @@ export default function ProductsPage({ categories, salesman }: any) {
 
     const handleConfirmDelete = () => {
         deleteProduct(deleteConfirm.id);
-        loadData();
+        // loadData();
         toast({
             title: 'Berhasil',
             description: 'Barang telah dihapus',
@@ -87,7 +78,7 @@ export default function ProductsPage({ categories, salesman }: any) {
     const handleDialogClose = () => {
         setIsDialogOpen(false);
         setEditingProduct(null);
-        loadData();
+        // loadData();
     };
 
     const filteredProducts = products.filter((p) => {
@@ -101,18 +92,22 @@ export default function ProductsPage({ categories, salesman }: any) {
             (stockFilter === 'ready' && p.quantity > 0);
 
         const matchesCategory =
-            categoryFilter === 'all' || p.categoryId === categoryFilter;
+            categoryFilter === 'all' || p.kategori_barang_id === categoryFilter;
 
         return matchesSearch && matchesStockFilter && matchesCategory;
     });
 
     const getCategoryName = (categoryId: string) => {
-        return categories.find((c) => c.id === categoryId)?.name || '-';
+        return (
+            initialCategories.find((c: any) => c.id === categoryId)?.name || '-'
+        );
     };
 
     const getSalesmanName = (salesmanId?: string) => {
         if (!salesmanId) return '-';
-        return salesmen.find((s) => s.id === salesmanId)?.name || '-';
+        return (
+            initialSalesmen.find((s: any) => s.id === salesmanId)?.name || '-'
+        );
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -161,7 +156,7 @@ export default function ProductsPage({ categories, salesman }: any) {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Semua Kategori</SelectItem>
-                            {categories.map((cat) => (
+                            {initialCategories.map((cat: any) => (
                                 <SelectItem key={cat.id} value={cat.id}>
                                     {cat.name}
                                 </SelectItem>
@@ -233,12 +228,12 @@ export default function ProductsPage({ categories, salesman }: any) {
                                             </td>
                                             <td className="px-4 py-3 text-muted-foreground">
                                                 {getCategoryName(
-                                                    product.categoryId,
+                                                    product.kategori_barang_id,
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-muted-foreground">
                                                 {getSalesmanName(
-                                                    product.salesmanId,
+                                                    product.sales_id,
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-right">
@@ -313,6 +308,8 @@ export default function ProductsPage({ categories, salesman }: any) {
                     onOpenChange={setIsDialogOpen}
                     product={editingProduct}
                     onClose={handleDialogClose}
+                    initialCategories={initialCategories}
+                    initialSalesmen={initialSalesmen}
                 />
             </div>
         </AppLayout>

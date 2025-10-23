@@ -11,7 +11,7 @@ class StoreBarangRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,12 +22,11 @@ class StoreBarangRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'string', 'max:50', 'unique:products,code'],
+            'code' => ['required', 'string', 'max:50', 'unique:barangs,code'],
             'name' => ['required', 'string', 'max:255'],
-            'category_id' => ['required', 'uuid', 'exists:categories,id'],
-            'salesman_id' => ['nullable', 'uuid', 'exists:salesmen,id'],
+            'kategori_barang_id' => ['required', 'exists:kategori_barangs,id'],
+            'sales_id' => ['nullable', 'exists:sales,id'],
             'price' => ['required', 'numeric', 'min:0'],
-            'quantity' => ['required', 'integer', 'min:0'],
             'unit' => ['required', 'string', 'max:50'],
             'description' => ['nullable', 'string'],
         ];
@@ -39,9 +38,9 @@ class StoreBarangRequest extends FormRequest
             'code.required' => 'Kode produk wajib diisi.',
             'code.unique' => 'Kode produk sudah digunakan.',
             'name.required' => 'Nama produk wajib diisi.',
-            'category_id.required' => 'Kategori produk wajib diisi.',
-            'category_id.exists' => 'Kategori tidak ditemukan.',
-            'salesman_id.exists' => 'Salesman tidak ditemukan.',
+            'kategori_barang_id.required' => 'Kategori produk wajib diisi.',
+            'kategori_barang_id.exists' => 'Kategori tidak ditemukan.',
+            'sales_id.exists' => 'Salesman tidak ditemukan.',
             'price.numeric' => 'Harga harus berupa angka.',
             'quantity.integer' => 'Jumlah harus berupa angka bulat.',
             'unit.required' => 'Satuan produk wajib diisi.',

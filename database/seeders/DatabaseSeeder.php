@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
     {
         KategoriBarang::factory(10)->create();
         Sales::factory(10)->create();
+        Barang::factory(5)->create();
 
         User::firstOrCreate(
             ['email' => 'test@example.com'],

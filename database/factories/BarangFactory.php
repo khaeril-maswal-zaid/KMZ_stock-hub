@@ -21,8 +21,8 @@ class BarangFactory extends Factory
         return [
             'code' => strtoupper($this->faker->bothify('PRD-###??')),
             'name' => fake()->name(),
-            'category_id' => KategoriBarang::inRandomOrder()->first()?->id ?? 1,
-            'salesman_id' => KategoriBarang::inRandomOrder()->first()?->id ?? 1,
+            'kategori_barang_id' => KategoriBarang::inRandomOrder()->first()?->id ?? 1,
+            'sales_id' => KategoriBarang::inRandomOrder()->first()?->id ?? 1,
             'price' => fake()->randomFloat(2, 10000, 1000000),
             'quantity' => fake()->numberBetween(1, 500),
             'unit' => fake()->randomElement(['pcs', 'box', 'kg', 'liter']),
