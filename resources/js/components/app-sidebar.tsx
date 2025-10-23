@@ -11,6 +11,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { report } from '@/routes/';
 import { index as categorieIndex } from '@/routes/categorie';
 import { index as productIndex } from '@/routes/product';
 import { index as purchaseIndex } from '@/routes/purchase';
@@ -63,7 +64,7 @@ const mainNavItems: NavItem[] = [
         icon: ShoppingCart,
     },
     {
-        href: '/reports',
+        href: report.url(),
         title: 'Laporan',
         icon: BarChart3,
     },

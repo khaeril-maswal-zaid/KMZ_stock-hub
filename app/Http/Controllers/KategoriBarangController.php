@@ -15,7 +15,7 @@ class KategoriBarangController extends Controller
      */
     public function index(): Response
     {
-        return Inertia::render('products/page');
+        return Inertia::render('categories/page');
     }
 
     /**
@@ -31,7 +31,7 @@ class KategoriBarangController extends Controller
      */
     public function store(StoreKategoriBarangRequest $request)
     {
-        //
+        KategoriBarang::create($request->validated());
     }
 
     /**
@@ -55,7 +55,7 @@ class KategoriBarangController extends Controller
      */
     public function update(UpdateKategoriBarangRequest $request, KategoriBarang $kategoriBarang)
     {
-        //
+        $kategoriBarang->update($request->validated());
     }
 
     /**
@@ -63,6 +63,6 @@ class KategoriBarangController extends Controller
      */
     public function destroy(KategoriBarang $kategoriBarang)
     {
-        //
+        $kategoriBarang->delete();
     }
 }

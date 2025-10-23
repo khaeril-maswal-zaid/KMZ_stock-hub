@@ -9,4 +9,6 @@ class Sales extends Model
 {
     /** @use HasFactory<\Database\Factories\SalesFactory> */
     use HasFactory;
+
+    protected $fillable = ['name', 'email', 'phone'];
 }

@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\KategoriBarang;
+use App\Models\Sales;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,7 +19,14 @@ class BarangFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'code' => strtoupper($this->faker->bothify('PRD-###??')),
+            'name' => fake()->name(),
+            'category_id' => KategoriBarang::inRandomOrder()->first()?->id ?? 1,
+            'salesman_id' => KategoriBarang::inRandomOrder()->first()?->id ?? 1,
+            'price' => fake()->randomFloat(2, 10000, 1000000),
+            'quantity' => fake()->numberBetween(1, 500),
+            'unit' => fake()->randomElement(['pcs', 'box', 'kg', 'liter']),
+            'description' => fake()->optional()->sentence(),
         ];
     }
 }

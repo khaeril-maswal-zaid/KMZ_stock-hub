@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\KategoriBarangController;
+use App\Http\Controllers\MorePagesController;
 use App\Http\Controllers\PembelianController;
 use App\Http\Controllers\PenjualanController;
 use App\Http\Controllers\SalesController;
@@ -16,13 +17,13 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', [MorePagesController::class, 'dashboard'])->name('dashboard');
+
+    Route::get('reports', [MorePagesController::class, 'laporan'])->name('report');
 
     Route::get('products', [BarangController::class, 'index'])->name('product.index');
 
-    Route::get('purchases', [PembelianController::class, 'index'])->name('/purchase.index');
+    Route::get('purchases', [PembelianController::class, 'index'])->name('purchase.index');
 
     Route::get('sellings', [PenjualanController::class, 'index'])->name('selling.index');
 

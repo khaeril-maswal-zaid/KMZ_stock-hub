@@ -2,6 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Barang;
+use App\Models\KategoriBarang;
+use App\Models\Sales;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -13,7 +16,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        KategoriBarang::factory(10)->create();
+        Sales::factory(10)->create();
 
         User::firstOrCreate(
             ['email' => 'test@example.com'],

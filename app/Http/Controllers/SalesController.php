@@ -31,7 +31,7 @@ class SalesController extends Controller
      */
     public function store(StoreSalesRequest $request)
     {
-        //
+        Sales::create($request->validated());
     }
 
     /**
@@ -55,7 +55,7 @@ class SalesController extends Controller
      */
     public function update(UpdateSalesRequest $request, Sales $sales)
     {
-        //
+        $sales->update($request->validated());
     }
 
     /**
@@ -63,6 +63,6 @@ class SalesController extends Controller
      */
     public function destroy(Sales $sales)
     {
-        //
+        $sales->delete();
     }
 }

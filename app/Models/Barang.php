@@ -9,4 +9,16 @@ class Barang extends Model
 {
     /** @use HasFactory<\Database\Factories\BarangFactory> */
     use HasFactory;
+
+    protected $fillable = [
+        'id',
+        'code',
+        'name',
+        'category_id',
+        'salesman_id',
+        'price',
+        'quantity',
+        'unit',
+        'description',
+    ];
 }

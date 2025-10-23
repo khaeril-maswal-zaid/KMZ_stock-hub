@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Barang;
 use App\Http\Requests\StoreBarangRequest;
 use App\Http\Requests\UpdateBarangRequest;
+use App\Models\KategoriBarang;
+use App\Models\Sales;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,7 +17,12 @@ class BarangController extends Controller
      */
     public function index(): Response
     {
-        return Inertia::render('products/page');
+        $data = [
+            'categories' => KategoriBarang::select('id', 'name')->get(),
+            'salesman' => Sales::select('id', 'name')->get(),
+        ];
+
+        return Inertia::render('products/page', $data);
     }
 
     /**
@@ -31,7 +38,7 @@ class BarangController extends Controller
      */
     public function store(StoreBarangRequest $request)
     {
-        //
+        Barang::create($request->validated());
     }
 
     /**
@@ -55,7 +62,7 @@ class BarangController extends Controller
      */
     public function update(UpdateBarangRequest $request, Barang $barang)
     {
-        //
+        $barang->update($request->validated());
     }
 
     /**
@@ -63,6 +70,6 @@ class BarangController extends Controller
      */
     public function destroy(Barang $barang)
     {
-        //
+        $barang->delete();
     }
 }
