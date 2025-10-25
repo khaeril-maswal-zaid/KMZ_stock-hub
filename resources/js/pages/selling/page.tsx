@@ -1,6 +1,6 @@
 'use client';
 
-import { SalesDialog } from '@/components/stockhub//sales-dialog';
+import { TransactionDialog } from '@/components/stockhub/transaction-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -9,43 +9,49 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
-import {
-    addSale,
-    addStockHistory,
-    getCategories,
-    getProducts,
-    getSales,
-    updateProduct,
-} from '@/lib/storage';
-import type { Category, Product, Sale } from '@/lib/types';
+import { formatDateIna } from '@/lib/date';
+import { transaction } from '@/lib/storage';
+import type { Category, PaginatedResponse, Product, Sale } from '@/lib/types';
 import { dashboard } from '@/routes';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { Plus, ShoppingCart, TrendingUp } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Package, Plus, ShoppingCart, Trash2, TrendingUp } from 'lucide-react';
+import { useState } from 'react';
 
-export default function SalesPage() {
-    const [products, setProducts] = useState<Product[]>([]);
-    const [sales, setSales] = useState<Sale[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
+interface initialData {
+    products: Product[];
+    penjualans: PaginatedResponse<Sale>;
+    categories: Category[];
+}
+
+export default function SalesPage({
+    products,
+    penjualans,
+    categories,
+}: initialData) {
+    const sales = penjualans.data;
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState<{
+        open: boolean;
+        id: string;
+    }>({ open: false, id: '' });
+
     const { toast } = useToast();
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    const handleAddSale = (barang_id: string, quantity: number) => {
+        const product = products.find((p: any) => p.code === barang_id);
 
-    const loadData = () => {
-        setProducts(getProducts());
-        setSales(getSales());
-        setCategories(getCategories());
-    };
-
-    const handleAddSale = (productId: string, quantity: number) => {
-        const product = products.find((p) => p.id === productId);
         if (!product) return;
 
         if (quantity > product.quantity) {
@@ -58,29 +64,15 @@ export default function SalesPage() {
         }
 
         try {
-            const totalPrice = product.price * quantity;
-            addSale({
-                productId,
+            const data = {
+                barang_id,
                 quantity,
-                unitPrice: product.price,
-                totalPrice,
-                saleDate: new Date(),
-            });
+                unit_price: product.price,
+                type: 'Penjualan',
+            };
 
-            // Update product quantity
-            updateProduct(productId, {
-                quantity: product.quantity - quantity,
-            });
+            transaction(data);
 
-            // Add to stock history
-            addStockHistory({
-                productId,
-                type: 'OUT',
-                quantity,
-                notes: `Penjualan ${quantity} ${product.unit}`,
-            });
-
-            loadData();
             setIsDialogOpen(false);
             toast({
                 title: 'Berhasil',
@@ -95,29 +87,25 @@ export default function SalesPage() {
         }
     };
 
-    const getProductName = (productId: string) => {
-        return products.find((p) => p.id === productId)?.name || '-';
+    const handleDelete = (id: string) => {
+        setDeleteConfirm({ open: true, id });
     };
 
-    const getProductUnit = (productId: string) => {
-        return products.find((p) => p.id === productId)?.unit || 'PCS';
-    };
-
-    const getCategoryName = (categoryId: string) => {
-        return categories.find((c) => c.id === categoryId)?.name || '-';
-    };
-
-    const getProductCategory = (productId: string) => {
-        return products.find((p) => p.id === productId)?.categoryId || '';
+    const getProductCategory = (productId: number) => {
+        return (
+            products.find((p: any) => p.id === productId)?.kategori_barang_id ||
+            ''
+        );
     };
 
     const filteredSales = sales.filter((sale) => {
         if (categoryFilter === 'all') return true;
-        const productCategory = getProductCategory(sale.productId);
+
+        const productCategory = getProductCategory(sale.barang_id);
         return productCategory === categoryFilter;
     });
 
-    const totalRevenue = sales.reduce((sum, s) => sum + s.totalPrice, 0);
+    const totalRevenue = sales.reduce((sum, s) => sum + s.total_price, 0);
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -252,94 +240,111 @@ export default function SalesPage() {
                                 </SelectContent>
                             </Select>
                         </div>
+
                         <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-border">
-                                        <th className="px-4 py-3 text-left font-semibold">
-                                            Tanggal
-                                        </th>
-                                        <th className="px-4 py-3 text-left font-semibold">
-                                            Barang
-                                        </th>
-                                        <th className="px-4 py-3 text-left font-semibold">
-                                            Kategori
-                                        </th>
-                                        <th className="px-4 py-3 text-right font-semibold">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Tanggal</TableHead>
+                                        <TableHead>Kode Barang</TableHead>
+                                        <TableHead>Nama Barang</TableHead>
+                                        <TableHead>Kategori</TableHead>
+                                        <TableHead className="text-right">
                                             Jumlah
-                                        </th>
-                                        <th className="px-4 py-3 text-right font-semibold">
+                                        </TableHead>
+                                        <TableHead className="text-right">
                                             Harga Satuan
-                                        </th>
-                                        <th className="px-4 py-3 text-right font-semibold">
+                                        </TableHead>
+                                        <TableHead className="text-right">
                                             Total
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredSales
-                                        .slice()
-                                        .reverse()
-                                        .map((sale) => (
-                                            <tr
-                                                key={sale.id}
-                                                className="transition-smooth border-b border-border hover:bg-muted/30"
+                                        </TableHead>
+                                        <TableHead className="text-center">
+                                            Aksi
+                                        </TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredSales.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={8}
+                                                className="py-8 text-center text-muted-foreground"
                                             >
-                                                <td className="px-4 py-3 text-muted-foreground">
-                                                    {new Date(
-                                                        sale.saleDate,
-                                                    ).toLocaleDateString(
-                                                        'id-ID',
+                                                <Package className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                                                Belum ada data pembelian
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        filteredSales.map((purchase) => (
+                                            <TableRow key={purchase.id}>
+                                                <TableCell className="text-sm">
+                                                    {formatDateIna(
+                                                        purchase.created_at,
                                                     )}
-                                                </td>
-                                                <td className="px-4 py-3 font-medium">
-                                                    {getProductName(
-                                                        sale.productId,
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3 text-sm text-muted-foreground">
-                                                    {getCategoryName(
-                                                        getProductCategory(
-                                                            sale.productId,
-                                                        ),
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    {sale.quantity}{' '}
-                                                    {getProductUnit(
-                                                        sale.productId,
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    Rp{' '}
-                                                    {sale.unitPrice.toLocaleString(
-                                                        'id-ID',
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3 text-right font-bold">
-                                                    Rp{' '}
-                                                    {sale.totalPrice.toLocaleString(
-                                                        'id-ID',
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                </tbody>
-                            </table>
-                            {filteredSales.length === 0 && (
-                                <div className="py-8 text-center text-muted-foreground">
-                                    Belum ada penjualan dicatat
-                                </div>
-                            )}
+                                                </TableCell>
+                                                <TableCell className="font-mono text-sm">
+                                                    {purchase.barang?.code}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {purchase.barang?.name}
+                                                </TableCell>
+                                                <TableCell className="text-sm text-muted-foreground">
+                                                    {
+                                                        purchase.barang
+                                                            ?.category?.name
+                                                    }
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    {purchase.quantity}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    Rp.
+                                                    {' ' +
+                                                        purchase.unit_price?.toLocaleString(
+                                                            'id-ID',
+                                                        )}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    Rp.
+                                                    {' ' +
+                                                        purchase.total_price?.toLocaleString(
+                                                            'id-ID',
+                                                        )}
+                                                </TableCell>
+
+                                                <TableCell className="text-center">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        // onClick={() =>
+                                                        //     handleDelete(
+                                                        //         purchase.id,
+                                                        //     )
+                                                        // }
+                                                        className="text-destructive hover:text-destructive"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
                         </div>
                     </div>
                 </div>
 
-                <SalesDialog
+                <TransactionDialog
+                    initialSalesmen={[]}
                     open={isDialogOpen}
                     onOpenChange={setIsDialogOpen}
                     products={products}
-                    onAddSale={handleAddSale}
+                    categories={categories}
+                    type="sale"
+                    onSubmit={(productId, quantity) =>
+                        handleAddSale(productId, quantity)
+                    }
                 />
             </div>
         </AppLayout>

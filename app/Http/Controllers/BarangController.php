@@ -18,8 +18,10 @@ class BarangController extends Controller
     public function index(): Response
     {
         $data = [
-            'initialCategories' => KategoriBarang::select('id', 'name')->get(),
-            'initialSalesmen' => Sales::select('id', 'name')->get(),
+            'categories' => KategoriBarang::select(['id', 'name'])->orderBy('name', 'asc')->get(),
+            'products' => Barang::select(['code', 'name', 'unit', 'quantity', 'price', 'kategori_barang_id'])
+                ->with('category:id,name')
+                ->get(),
         ];
 
         return Inertia::render('products/page', $data);

@@ -1,18 +1,8 @@
 'use client';
 
-import type React from 'react';
-
 import { DeleteConfirmDialog } from '@/components/stockhub/delete-confirm-dialog';
+import { TransactionDialog } from '@/components/stockhub/transaction-dialog';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -30,51 +20,52 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
-import {
-    addPurchase,
-    deletePurchase,
-    getCategories,
-    getPurchases,
-} from '@/lib/storage';
-import type { Category, Purchase } from '@/lib/types';
+import { formatDateIna } from '@/lib/date';
+import { deletePurchase, transaction } from '@/lib/storage';
+import type {
+    Category,
+    PaginatedResponse,
+    Product,
+    Purchase,
+    Salesman,
+} from '@/lib/types';
 import { dashboard } from '@/routes';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Package, Plus, Trash2, TrendingUp } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-export default function PurchasesPage({ products }: any) {
-    const [purchases, setPurchases] = useState<Purchase[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
+interface initialData {
+    products: Product[];
+    pembelians: PaginatedResponse<Purchase>;
+    initialSalesmen: Salesman[];
+    categories: Category[];
+}
+
+export default function PurchasesPage({
+    products,
+    pembelians,
+    initialSalesmen,
+    categories,
+}: initialData) {
+    const purchases = pembelians.data;
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [open, setOpen] = useState(false);
-    const [formData, setFormData] = useState({
-        productId: '',
-        quantity: '',
-        unitPrice: '',
-    });
-
-    console.log(formData);
 
     const [deleteConfirm, setDeleteConfirm] = useState<{
         open: boolean;
         id: string;
     }>({ open: false, id: '' });
+
     const { toast } = useToast();
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = () => {
-        setPurchases(getPurchases());
-        setCategories(getCategories());
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!formData.productId || !formData.quantity || !formData.unitPrice) {
+    const handleSubmit = (
+        barang_id: string,
+        quantity: number,
+        salesman: string,
+        unit_price: number,
+    ) => {
+        if (!barang_id || !quantity || !unit_price) {
             toast({
                 title: 'Error',
                 description: 'Semua field wajib diisi',
@@ -84,26 +75,22 @@ export default function PurchasesPage({ products }: any) {
         }
 
         try {
-            const quantity = Number.parseInt(formData.quantity);
-            const unitPrice = Number.parseFloat(formData.unitPrice);
-            const totalPrice = quantity * unitPrice;
-
-            addPurchase({
-                productId: formData.productId,
+            const data = {
+                barang_id,
                 quantity,
-                unitPrice,
-                totalPrice,
-                purchaseDate: new Date(),
-            });
+                unit_price: unit_price,
+                type: 'Pembelian',
+                salesman,
+            };
+
+            transaction(data);
 
             toast({
                 title: 'Berhasil',
                 description: 'Pembelian telah dicatat',
             });
 
-            setFormData({ productId: '', quantity: '', unitPrice: '' });
             setOpen(false);
-            loadData();
         } catch (error) {
             toast({
                 title: 'Error',
@@ -123,34 +110,25 @@ export default function PurchasesPage({ products }: any) {
             title: 'Berhasil',
             description: 'Pembelian telah dihapus',
         });
-        loadData();
         setDeleteConfirm({ open: false, id: '' });
     };
 
-    const getProductName = (productId: string) => {
-        return products.find((p: any) => p.id === productId)?.name || '-';
-    };
-
-    const getProductCode = (productId: string) => {
-        return products.find((p: any) => p.id === productId)?.code || '-';
-    };
-
-    const getCategoryName = (categoryId: string) => {
-        return categories.find((c: any) => c.id === categoryId)?.name || '-';
-    };
-
-    const getProductCategory = (productId: string) => {
-        return products.find((p: any) => p.id === productId)?.categoryId || '';
+    const getProductCategory = (barang_id: number) => {
+        return (
+            products.find((p: any) => p.id === barang_id)?.kategori_barang_id ||
+            ''
+        );
     };
 
     const totalPurchaseValue = purchases.reduce(
-        (sum, p) => sum + p.totalPrice,
+        (sum, p) => sum + p.total_price,
         0,
     );
 
     const filteredPurchases = purchases.filter((purchase) => {
         if (categoryFilter === 'all') return true;
-        const productCategory = getProductCategory(purchase.productId);
+
+        const productCategory = getProductCategory(purchase.barang_id);
         return productCategory === categoryFilter;
     });
 
@@ -197,7 +175,7 @@ export default function PurchasesPage({ products }: any) {
                                 {purchases.length}
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
-                                transaksi pembelian
+                                Transaksi pembelian
                             </p>
                         </div>
                     </div>
@@ -215,10 +193,10 @@ export default function PurchasesPage({ products }: any) {
                                 </div>
                             </div>
                             <div className="text-3xl font-bold text-foreground">
-                                Rp{(totalPurchaseValue / 1000000).toFixed(1)}M
+                                Rp. {(totalPurchaseValue / 1000000).toFixed(1)}
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
-                                nilai total
+                                Nilai total
                             </p>
                         </div>
                     </div>
@@ -239,7 +217,7 @@ export default function PurchasesPage({ products }: any) {
                                 {products.length}
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
-                                produk
+                                Produk
                             </p>
                         </div>
                     </div>
@@ -281,6 +259,7 @@ export default function PurchasesPage({ products }: any) {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead>Tanggal</TableHead>
                                         <TableHead>Kode Barang</TableHead>
                                         <TableHead>Nama Barang</TableHead>
                                         <TableHead>Kategori</TableHead>
@@ -293,7 +272,6 @@ export default function PurchasesPage({ products }: any) {
                                         <TableHead className="text-right">
                                             Total
                                         </TableHead>
-                                        <TableHead>Tanggal</TableHead>
                                         <TableHead className="text-center">
                                             Aksi
                                         </TableHead>
@@ -311,63 +289,61 @@ export default function PurchasesPage({ products }: any) {
                                             </TableCell>
                                         </TableRow>
                                     ) : (
-                                        filteredPurchases.map((purchase) => (
-                                            <TableRow key={purchase.id}>
-                                                <TableCell className="font-mono text-sm">
-                                                    {getProductCode(
-                                                        purchase.productId,
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {getProductName(
-                                                        purchase.productId,
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-sm text-muted-foreground">
-                                                    {getCategoryName(
-                                                        getProductCategory(
-                                                            purchase.productId,
-                                                        ),
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    {purchase.quantity}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    Rp
-                                                    {purchase.unitPrice.toLocaleString(
-                                                        'id-ID',
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-right font-semibold">
-                                                    Rp
-                                                    {purchase.totalPrice.toLocaleString(
-                                                        'id-ID',
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-sm">
-                                                    {new Date(
-                                                        purchase.purchaseDate,
-                                                    ).toLocaleDateString(
-                                                        'id-ID',
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            handleDelete(
-                                                                purchase.id,
-                                                            )
+                                        filteredPurchases.map(
+                                            (purchase, index) => (
+                                                <TableRow key={index}>
+                                                    <TableCell className="text-sm">
+                                                        {formatDateIna(
+                                                            purchase.created_at,
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="font-mono text-sm">
+                                                        {purchase.barang?.code}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {purchase.barang?.name}
+                                                    </TableCell>
+                                                    <TableCell className="text-sm text-muted-foreground">
+                                                        {
+                                                            purchase.barang
+                                                                ?.category?.name
                                                         }
-                                                        className="text-destructive hover:text-destructive"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        {purchase.quantity}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        Rp.
+                                                        {' ' +
+                                                            purchase.unit_price?.toLocaleString(
+                                                                'id-ID',
+                                                            )}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        Rp.
+                                                        {' ' +
+                                                            purchase.total_price?.toLocaleString(
+                                                                'id-ID',
+                                                            )}
+                                                    </TableCell>
+
+                                                    <TableCell className="text-center">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            // onClick={() =>
+                                                            //     handleDelete(
+                                                            //         purchase.id,
+                                                            //     )
+                                                            // }
+                                                            className="text-destructive hover:text-destructive"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ),
+                                        )
                                     )}
                                 </TableBody>
                             </Table>
@@ -385,95 +361,15 @@ export default function PurchasesPage({ products }: any) {
                     onConfirm={handleConfirmDelete}
                 />
 
-                <Dialog open={open} onOpenChange={setOpen}>
-                    <DialogContent className="max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>Tambah Pembelian</DialogTitle>
-                            <DialogDescription>
-                                Catat pembelian barang baru untuk menambah stok
-                            </DialogDescription>
-                        </DialogHeader>
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="product">Pilih Barang</Label>
-                                <Select
-                                    value={formData.productId}
-                                    onValueChange={(value) =>
-                                        setFormData({
-                                            ...formData,
-                                            productId: value,
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger id="product">
-                                        <SelectValue placeholder="Pilih barang" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {products.map((product: any) => (
-                                            <SelectItem
-                                                key={product.id}
-                                                value={product.id}
-                                            >
-                                                {product.code} -{' '}
-                                                {product.category?.name} -{' '}
-                                                {product.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="quantity">Jumlah</Label>
-                                <Input
-                                    id="quantity"
-                                    type="number"
-                                    placeholder="0"
-                                    value={formData.quantity}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            quantity: e.target.value,
-                                        })
-                                    }
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="unitPrice">
-                                    Harga Satuan (Rp)
-                                </Label>
-                                <Input
-                                    id="unitPrice"
-                                    type="number"
-                                    placeholder="0"
-                                    value={formData.unitPrice}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            unitPrice: e.target.value,
-                                        })
-                                    }
-                                />
-                            </div>
-
-                            <div className="flex gap-3 pt-4">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setOpen(false)}
-                                    className="flex-1"
-                                >
-                                    Batal
-                                </Button>
-                                <Button type="submit" className="flex-1">
-                                    Simpan
-                                </Button>
-                            </div>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                <TransactionDialog
+                    open={open}
+                    onOpenChange={setOpen}
+                    products={products}
+                    categories={categories}
+                    type="purchase"
+                    initialSalesmen={initialSalesmen}
+                    onSubmit={handleSubmit}
+                />
             </div>
         </AppLayout>
     );

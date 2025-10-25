@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class Barang extends Model
 {
@@ -14,15 +16,24 @@ class Barang extends Model
         'code',
         'name',
         'kategori_barang_id',
-        'sales_id',
         'price',
         'quantity',
         'unit',
-        'description',
     ];
 
-    public function category()
+    public function category(): BelongsTo
     {
         return $this->belongsTo(KategoriBarang::class, 'kategori_barang_id');
+    }
+
+    protected static function booted()
+    {
+        static::creating(function ($barang) {
+            do {
+                $randomCode = 'PG-' . strtoupper(Str::random(2)) . '-' . rand(10, 99);
+            } while (self::where('code', $randomCode)->exists());
+
+            $barang->code = $randomCode;
+        });
     }
 }

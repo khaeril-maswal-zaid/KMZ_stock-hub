@@ -21,19 +21,20 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { deleteProduct } from '@/lib/storage';
-import type { Product } from '@/lib/types';
+import type { Category, Product } from '@/lib/types';
 import { dashboard } from '@/routes';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Edit2, Plus, Search, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-export default function ProductsPage({
-    initialCategories,
-    initialSalesmen,
-}: any) {
-    const [products, setProducts] = useState<Product[]>([]);
+interface initialData {
+    initialCategories: Category[];
+    products: Product[];
+    categories: Category[];
+}
 
+export default function ProductsPage({ products, categories }: initialData) {
     const [searchTerm, setSearchTerm] = useState('');
     const [stockFilter, setStockFilter] = useState<'all' | 'empty' | 'ready'>(
         'all',
@@ -47,17 +48,13 @@ export default function ProductsPage({
     }>({ open: false, id: '' });
     const { toast } = useToast();
 
-    useEffect(() => {
-        // loadData();
-    }, []);
-
     const handleDelete = (id: string) => {
         setDeleteConfirm({ open: true, id });
     };
 
     const handleConfirmDelete = () => {
         deleteProduct(deleteConfirm.id);
-        // loadData();
+
         toast({
             title: 'Berhasil',
             description: 'Barang telah dihapus',
@@ -78,37 +75,23 @@ export default function ProductsPage({
     const handleDialogClose = () => {
         setIsDialogOpen(false);
         setEditingProduct(null);
-        // loadData();
     };
 
-    const filteredProducts = products.filter((p) => {
-        const matchesSearch =
-            p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.code.toLowerCase().includes(searchTerm.toLowerCase());
+    const filteredProductsx =
+        categoryFilter === 'all'
+            ? products
+            : products.filter(
+                  (p) => p.kategori_barang_id === Number(categoryFilter),
+              );
 
-        const matchesStockFilter =
-            stockFilter === 'all' ||
-            (stockFilter === 'empty' && p.quantity === 0) ||
-            (stockFilter === 'ready' && p.quantity > 0);
-
-        const matchesCategory =
-            categoryFilter === 'all' || p.kategori_barang_id === categoryFilter;
-
-        return matchesSearch && matchesStockFilter && matchesCategory;
-    });
-
-    const getCategoryName = (categoryId: string) => {
-        return (
-            initialCategories.find((c: any) => c.id === categoryId)?.name || '-'
-        );
-    };
-
-    const getSalesmanName = (salesmanId?: string) => {
-        if (!salesmanId) return '-';
-        return (
-            initialSalesmen.find((s: any) => s.id === salesmanId)?.name || '-'
-        );
-    };
+    const filteredProducts = products.filter(
+        (p) =>
+            (categoryFilter === 'all' ||
+                p.kategori_barang_id === Number(categoryFilter)) &&
+            (stockFilter === 'all' ||
+                (stockFilter === 'empty' && p.quantity === 0) ||
+                (stockFilter === 'ready' && p.quantity > 0)),
+    );
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -156,7 +139,7 @@ export default function ProductsPage({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Semua Kategori</SelectItem>
-                            {initialCategories.map((cat: any) => (
+                            {categories.map((cat: any) => (
                                 <SelectItem key={cat.id} value={cat.id}>
                                     {cat.name}
                                 </SelectItem>
@@ -200,11 +183,8 @@ export default function ProductsPage({
                                         <th className="px-4 py-3 text-left font-semibold">
                                             Kategori
                                         </th>
-                                        <th className="px-4 py-3 text-left font-semibold">
-                                            Sales
-                                        </th>
                                         <th className="px-4 py-3 text-right font-semibold">
-                                            Harga
+                                            Harga Jual
                                         </th>
                                         <th className="px-4 py-3 text-right font-semibold">
                                             Stok
@@ -217,7 +197,7 @@ export default function ProductsPage({
                                 <tbody>
                                     {filteredProducts.map((product) => (
                                         <tr
-                                            key={product.id}
+                                            key={product.code}
                                             className="transition-smooth border-b border-border hover:bg-muted/30"
                                         >
                                             <td className="px-4 py-3 font-mono text-xs">
@@ -227,20 +207,15 @@ export default function ProductsPage({
                                                 {product.name}
                                             </td>
                                             <td className="px-4 py-3 text-muted-foreground">
-                                                {getCategoryName(
-                                                    product.kategori_barang_id,
-                                                )}
+                                                {product.category?.name}
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-muted-foreground">
-                                                {getSalesmanName(
-                                                    product.sales_id,
-                                                )}
-                                            </td>
+
                                             <td className="px-4 py-3 text-right">
-                                                Rp{' '}
-                                                {product.price.toLocaleString(
-                                                    'id-ID',
-                                                )}
+                                                Rp.
+                                                {' ' +
+                                                    product.price?.toLocaleString(
+                                                        'id-ID',
+                                                    )}
                                             </td>
                                             <td
                                                 className={`px-4 py-3 text-right font-bold ${
@@ -269,11 +244,11 @@ export default function ProductsPage({
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        onClick={() =>
-                                                            handleDelete(
-                                                                product.id,
-                                                            )
-                                                        }
+                                                        // onClick={() =>
+                                                        //     handleDelete(
+                                                        //         product.id,
+                                                        //     )
+                                                        // }
                                                         className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
@@ -308,8 +283,7 @@ export default function ProductsPage({
                     onOpenChange={setIsDialogOpen}
                     product={editingProduct}
                     onClose={handleDialogClose}
-                    initialCategories={initialCategories}
-                    initialSalesmen={initialSalesmen}
+                    initialCategories={categories}
                 />
             </div>
         </AppLayout>

@@ -17,10 +17,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { addProduct, updateProduct } from '@/lib/storage';
-import type { Category, Product, Salesman } from '@/lib/types';
+import type { Category, Product } from '@/lib/types';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 
@@ -29,7 +28,6 @@ interface ProductDialogProps {
     onOpenChange: (open: boolean) => void;
     product?: Product | null;
     onClose: () => void;
-    initialSalesmen: Salesman[];
     initialCategories: Category[];
 }
 
@@ -38,17 +36,15 @@ export function ProductDialog({
     onOpenChange,
     product,
     onClose,
-    initialSalesmen,
     initialCategories,
 }: ProductDialogProps) {
-    const [formData, setFormData] = useState({
-        code: '',
+    const [formData, setFormData] = useState<Product>({
+        // code: '',
         name: '',
         kategori_barang_id: 0,
-        sales_id: 0,
-        price: '',
-        unit: 'PCS' as const,
-        description: '',
+        price: 0,
+        unit: 'PCS',
+        quantity: 0,
     });
 
     const { toast } = useToast();
@@ -56,23 +52,21 @@ export function ProductDialog({
     useEffect(() => {
         if (product) {
             setFormData({
-                code: product.code,
+                // code: product.code,
                 name: product.name,
                 kategori_barang_id: product.kategori_barang_id,
-                sales_id: product.sales_id ?? 0,
-                price: product.price.toString(),
+                price: product.price,
                 unit: product.unit,
-                description: product.description || '',
+                quantity: 0,
             });
         } else {
             setFormData({
-                code: '',
+                // code: '',
                 name: '',
                 kategori_barang_id: 0,
-                sales_id: 0,
-                price: '',
-                unit: 'PCS',
-                description: '',
+                price: 0,
+                unit: 'KOLI',
+                quantity: 0,
             });
         }
     }, [product, open]);
@@ -80,12 +74,7 @@ export function ProductDialog({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (
-            !formData.code ||
-            !formData.name ||
-            !formData.kategori_barang_id ||
-            !formData.price
-        ) {
+        if (!formData.name || !formData.kategori_barang_id || !formData.price) {
             toast({
                 title: 'Error',
                 description: 'Semua field wajib diisi',
@@ -96,14 +85,12 @@ export function ProductDialog({
 
         try {
             if (product) {
-                updateProduct(product.id, {
+                updateProduct(product.code, {
                     code: formData.code,
                     name: formData.name,
                     kategori_barang_id: formData.kategori_barang_id,
-                    sales_id: formData.sales_id || undefined,
-                    price: Number.parseFloat(formData.price),
+                    price: formData.price,
                     unit: formData.unit,
-                    description: formData.description,
                 });
                 toast({
                     title: 'Berhasil',
@@ -113,9 +100,6 @@ export function ProductDialog({
                 addProduct({
                     ...formData,
                     kategori_barang_id: Number(formData.kategori_barang_id),
-                    sales_id: formData.sales_id
-                        ? Number(formData.sales_id)
-                        : undefined,
                     price: Number(formData.price),
                 });
                 toast({
@@ -149,7 +133,7 @@ export function ProductDialog({
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-2">
+                    {/* <div className="space-y-2">
                         <Label htmlFor="code">Kode Barang</Label>
                         <Input
                             id="code"
@@ -162,7 +146,7 @@ export function ProductDialog({
                                 })
                             }
                         />
-                    </div>
+                    </div> */}
 
                     <div className="space-y-2">
                         <Label htmlFor="name">Nama Barang</Label>
@@ -210,48 +194,18 @@ export function ProductDialog({
                         </Select>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="salesman">Sales (Opsional)</Label>
-                        <Select
-                            value={
-                                formData.sales_id
-                                    ? String(formData.sales_id)
-                                    : ''
-                            }
-                            onValueChange={(value) =>
-                                setFormData({
-                                    ...formData,
-                                    sales_id:
-                                        value === 'none' ? 0 : Number(value),
-                                })
-                            }
-                        >
-                            <SelectTrigger id="salesman">
-                                <SelectValue placeholder="Pilih sales" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">Tidak ada</SelectItem>
-                                {initialSalesmen.map((s) => (
-                                    <SelectItem key={s.id} value={String(s.id)}>
-                                        {s.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="price">Harga (Rp)</Label>
+                            <Label htmlFor="price">Harga Jual (Rp)</Label>
                             <Input
                                 id="price"
-                                type="number"
+                                type=""
                                 placeholder="0"
                                 value={formData.price}
                                 onChange={(e) =>
                                     setFormData({
                                         ...formData,
-                                        price: e.target.value,
+                                        price: Number(e.target.value),
                                     })
                                 }
                             />
@@ -260,37 +214,22 @@ export function ProductDialog({
                             <Label htmlFor="unit">Satuan</Label>
                             <Select
                                 value={formData.unit}
-                                onValueChange={(value: any) =>
-                                    setFormData({ ...formData, unit: value })
+                                onValueChange={(value) =>
+                                    setFormData({
+                                        ...formData,
+                                        unit: value as 'PCS' | 'KOLI',
+                                    })
                                 }
                             >
                                 <SelectTrigger id="unit">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="PCS">PCS</SelectItem>
-                                    <SelectItem value="KOLI">KOLI</SelectItem>
+                                    <SelectItem value={'PCS'}>PCS</SelectItem>
+                                    <SelectItem value={'KOLI'}>KOLI</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="description">
-                            Deskripsi (Opsional)
-                        </Label>
-                        <Textarea
-                            id="description"
-                            placeholder="Deskripsi barang..."
-                            value={formData.description}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    description: e.target.value,
-                                })
-                            }
-                            rows={3}
-                        />
                     </div>
 
                     <div className="flex gap-3 pt-4">

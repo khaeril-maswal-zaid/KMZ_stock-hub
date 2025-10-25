@@ -14,9 +14,8 @@ import { dashboard } from '@/routes';
 import { report } from '@/routes/';
 import { index as categorieIndex } from '@/routes/categorie';
 import { index as productIndex } from '@/routes/product';
-import { index as purchaseIndex } from '@/routes/purchase';
 import { index as salesmenIndex } from '@/routes/salesmen';
-import { index as sellingIndex } from '@/routes/selling';
+import { pembelian, penjualan } from '@/routes/transaction';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import {
@@ -54,12 +53,12 @@ const mainNavItems: NavItem[] = [
         icon: Users,
     },
     {
-        href: purchaseIndex.url(),
+        href: pembelian.url(),
         title: 'Pembelian',
         icon: Truck,
     },
     {
-        href: sellingIndex.url(),
+        href: penjualan.url(),
         title: 'Penjualan',
         icon: ShoppingCart,
     },

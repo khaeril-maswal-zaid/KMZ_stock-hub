@@ -19,14 +19,11 @@ class BarangFactory extends Factory
     public function definition(): array
     {
         return [
-            'code' => strtoupper($this->faker->bothify('PRD-###??')),
             'name' => fake()->name(),
             'kategori_barang_id' => KategoriBarang::inRandomOrder()->first()?->id ?? 1,
-            'sales_id' => KategoriBarang::inRandomOrder()->first()?->id ?? 1,
             'price' => fake()->randomFloat(2, 10000, 1000000),
             'quantity' => fake()->numberBetween(1, 500),
-            'unit' => fake()->randomElement(['pcs', 'box', 'kg', 'liter']),
-            'description' => fake()->optional()->sentence(),
+            'unit' => fake()->randomElement(['KOLI', 'PCS']),
         ];
     }
 }

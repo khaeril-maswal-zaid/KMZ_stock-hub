@@ -1,8 +1,28 @@
+export interface PaginationMeta {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+}
+
+export interface PaginationLinks {
+    first?: string;
+    last?: string;
+    prev?: string | null;
+    next?: string | null;
+}
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    meta: PaginationMeta;
+    links: PaginationLinks;
+}
+
 export interface Category {
     id: string;
     name: string;
     description?: string;
-    createdAt: Date;
+    created_at: Date;
 }
 
 export interface Salesman {
@@ -14,35 +34,34 @@ export interface Salesman {
 }
 
 export interface Product {
-    id: number; // ← sebelumnya string
-    code: string;
     name: string;
-    kategori_barang_id: number; // ← sebelumnya string
-    sales_id?: number; // ← sebelumnya string
+    kategori_barang_id: number;
     price: number;
-    quantity: number;
     unit: 'PCS' | 'KOLI';
-    description?: string;
-    createdAt: Date;
-    updatedAt: Date;
+    quantity: number;
+    id?: number;
+    code?: string;
+    category?: Category;
 }
 
 export interface Purchase {
-    id: string;
-    productId: string;
+    id: number;
+    barang_id: number;
+    barang: Product;
     quantity: number;
-    unitPrice: number;
-    totalPrice: number;
-    purchaseDate: Date;
+    unit_price: number;
+    total_price: number;
+    created_at: string;
 }
 
 export interface Sale {
-    id: string;
-    productId: string;
+    id: number;
+    barang: Product;
+    barang_id: number;
     quantity: number;
-    unitPrice: number;
-    totalPrice: number;
-    saleDate: Date;
+    unit_price: number;
+    total_price: number;
+    created_at: string;
 }
 
 export interface StockHistory {

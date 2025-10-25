@@ -7,7 +7,8 @@ import type {
     StockHistory,
 } from '@/lib/types';
 
-import { store } from '@/routes/product';
+import { store as storeProduct } from '@/routes/product';
+import { store as storeTransaction } from '@/routes/transaction';
 import { router } from '@inertiajs/react';
 
 const STORAGE_KEYS = {
@@ -152,7 +153,7 @@ export function getProducts(): Product[] {
 }
 
 export function addProduct(product: any) {
-    router.post(store().url, product, {
+    router.post(storeProduct().url, product, {
         onSuccess: () => {
             // Optionally handle success
         },
@@ -189,15 +190,17 @@ export function getSales(): Sale[] {
     return data ? JSON.parse(data) : [];
 }
 
-export function addSale(sale: Omit<Sale, 'id'>): Sale {
-    const sales = getSales();
-    const newSale: Sale = {
-        ...sale,
-        id: Date.now().toString(),
-    };
-    sales.push(newSale);
-    localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
-    return newSale;
+export function transaction(data: any) {
+    router.post(storeTransaction().url, data, {
+        onSuccess: () => {
+            return data.type + ' Berhasil';
+        },
+        onError: (err) => {
+            console.log(err);
+
+            return err;
+        },
+    });
 }
 
 // Stock History
@@ -269,31 +272,15 @@ export function getPurchases(): Purchase[] {
     return data ? JSON.parse(data) : [];
 }
 
-export function addPurchase(purchase: Omit<Purchase, 'id'>): Purchase {
-    const purchases = getPurchases();
-    const newPurchase: Purchase = {
-        ...purchase,
-        id: Date.now().toString(),
-    };
-    purchases.push(newPurchase);
-    localStorage.setItem(STORAGE_KEYS.PURCHASES, JSON.stringify(purchases));
-
-    // Update product quantity
-    const product = getProducts().find((p) => p.id === purchase.productId);
-    if (product) {
-        updateProduct(purchase.productId, {
-            quantity: product.quantity + purchase.quantity,
-        });
-        // Add to stock history
-        addStockHistory({
-            productId: purchase.productId,
-            type: 'IN',
-            quantity: purchase.quantity,
-            notes: `Pembelian - ${purchase.quantity} unit @ Rp${purchase.unitPrice.toLocaleString('id-ID')}`,
-        });
-    }
-
-    return newPurchase;
+export function addPurchase(purchase: any) {
+    router.post(storeTransaction().url, purchase, {
+        onSuccess: () => {
+            // Optionally handle success
+        },
+        onError: (err) => {
+            console.log(err);
+        },
+    });
 }
 
 export function deletePurchase(id: string): boolean {
