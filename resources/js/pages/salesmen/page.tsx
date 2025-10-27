@@ -22,52 +22,45 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
-import {
-    addSalesman,
-    deleteSalesman,
-    getSalesmen,
-    updateSalesman,
-} from '@/lib/storage';
+import { addSalesman, deleteSalesman, updateSalesman } from '@/lib/storage';
 import type { Salesman } from '@/lib/types';
 import { dashboard } from '@/routes';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Edit2, Mail, Phone, Plus, Search, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-export default function SalesmenPage() {
-    const [salesmen, setSalesmen] = useState<Salesman[]>([]);
+interface initialData {
+    salesmen: Salesman[];
+}
+
+export default function SalesmenPage({ salesmen }: initialData) {
     const [searchTerm, setSearchTerm] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingSalesman, setEditingSalesman] = useState<Salesman | null>(
         null,
     );
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         phone: '',
     });
+
     const [deleteConfirm, setDeleteConfirm] = useState<{
         open: boolean;
         id: string;
     }>({ open: false, id: '' });
+
     const { toast } = useToast();
-
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = () => {
-        setSalesmen(getSalesmen());
-    };
 
     const handleDelete = (id: string) => {
         setDeleteConfirm({ open: true, id });
     };
 
     const handleConfirmDelete = () => {
-        deleteSalesman(deleteConfirm.id);
-        loadData();
+        deleteSalesman(Number(deleteConfirm.id));
+
         toast({
             title: 'Berhasil',
             description: 'Sales telah dihapus',
@@ -106,30 +99,29 @@ export default function SalesmenPage() {
             return;
         }
 
+        const data = {
+            id: '',
+            name: formData.name,
+            email: formData.email || undefined,
+            phone: formData.phone || undefined,
+        };
+
         try {
             if (editingSalesman) {
-                updateSalesman(editingSalesman.id, {
-                    name: formData.name,
-                    email: formData.email || undefined,
-                    phone: formData.phone || undefined,
-                });
+                updateSalesman(Number(editingSalesman.id), data);
+
                 toast({
                     title: 'Berhasil',
                     description: 'Sales telah diperbarui',
                 });
             } else {
-                addSalesman({
-                    name: formData.name,
-                    email: formData.email || undefined,
-                    phone: formData.phone || undefined,
-                });
+                addSalesman(data);
                 toast({
                     title: 'Berhasil',
                     description: 'Sales telah ditambahkan',
                 });
             }
             setIsDialogOpen(false);
-            loadData();
         } catch (error) {
             toast({
                 title: 'Error',
@@ -205,9 +197,7 @@ export default function SalesmenPage() {
                                         <th className="px-4 py-3 text-left font-semibold">
                                             Telepon
                                         </th>
-                                        <th className="px-4 py-3 text-left font-semibold">
-                                            Bergabung
-                                        </th>
+
                                         <th className="px-4 py-3 text-center font-semibold">
                                             Aksi
                                         </th>
@@ -216,36 +206,31 @@ export default function SalesmenPage() {
                                 <tbody>
                                     {filteredSalesmen.map((salesman) => (
                                         <tr
-                                            key={salesman.id}
+                                            key={salesman.email}
                                             className="transition-smooth border-b border-border hover:bg-muted/30"
                                         >
                                             <td className="px-4 py-3 font-medium">
                                                 {salesman.name}
                                             </td>
-                                            <td className="flex items-center gap-2 px-4 py-3 text-muted-foreground">
+                                            <td className="items-center px-4 py-3 text-muted-foreground">
                                                 {salesman.email ? (
                                                     <>
-                                                        <Mail className="h-4 w-4" />
-                                                        {salesman.email}
+                                                        <Mail className="inline h-4 w-4" />
+                                                        {' ' + salesman.email}
                                                     </>
                                                 ) : (
                                                     '-'
                                                 )}
                                             </td>
-                                            <td className="flex items-center gap-2 px-4 py-3 text-muted-foreground">
+                                            <td className="items-center px-4 py-3 text-muted-foreground">
                                                 {salesman.phone ? (
                                                     <>
-                                                        <Phone className="h-4 w-4" />
-                                                        {salesman.phone}
+                                                        <Phone className="inline h-4 w-4" />
+                                                        {' ' + salesman.phone}
                                                     </>
                                                 ) : (
                                                     '-'
                                                 )}
-                                            </td>
-                                            <td className="px-4 py-3 text-xs text-muted-foreground">
-                                                {new Date(
-                                                    salesman.createdAt,
-                                                ).toLocaleDateString('id-ID')}
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex justify-center gap-2">

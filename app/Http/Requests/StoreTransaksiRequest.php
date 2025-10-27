@@ -21,12 +21,19 @@ class StoreTransaksiRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'barang_id' => 'required|exists:barangs,code',
             'quantity' => 'required|integer|min:1',
             'unit_price' => 'required|numeric|min:1',
             'type' => 'required|in:Penjualan,Pembelian',
         ];
+
+        // Jika type = Pembelian, maka salesman_id wajib dan harus valid
+        if ($this->input('type') === 'Pembelian') {
+            $rules['salesman'] = 'required|exists:sales,id';
+        }
+
+        return $rules;
     }
 
     public function messages(): array
@@ -39,6 +46,10 @@ class StoreTransaksiRequest extends FormRequest
             'quantity.min' => 'Jumlah minimal 1.',
             'unit_price.required' => 'Harga satuan wajib diisi.',
             'unit_price.numeric' => 'Harga satuan harus berupa angka.',
+            'type.required' => 'Tipe transaksi wajib dipilih.',
+            'type.in' => 'Tipe transaksi harus berupa Penjualan atau Pembelian.',
+            'salesman_id.required' => 'Salesman wajib dipilih untuk pembelian.',
+            'salesman_id.exists' => 'Salesman yang dipilih tidak ditemukan.',
         ];
     }
 }

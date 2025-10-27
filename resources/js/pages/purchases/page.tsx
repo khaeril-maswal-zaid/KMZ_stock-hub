@@ -1,5 +1,6 @@
 'use client';
 
+import { BulkTransactionDialog } from '@/components/stockhub/bulk-transaction-dialog';
 import { DeleteConfirmDialog } from '@/components/stockhub/delete-confirm-dialog';
 import { TransactionDialog } from '@/components/stockhub/transaction-dialog';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,7 @@ export default function PurchasesPage({
     const purchases = pembelians.data;
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [open, setOpen] = useState(false);
+    const [bulkOpen, setBulkOpen] = useState(false);
 
     const [deleteConfirm, setDeleteConfirm] = useState<{
         open: boolean;
@@ -91,6 +93,35 @@ export default function PurchasesPage({
             });
 
             setOpen(false);
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'Terjadi kesalahan',
+                variant: 'destructive',
+            });
+        }
+    };
+
+    const handleBulkPurchase = (items: any[]) => {
+        try {
+            items.forEach((item) => {
+                const data = {
+                    barang_id: item.productCode,
+                    quantity: item.quantity,
+                    unit_price: item.unitPrice,
+                    salesman: item.salesId,
+                    type: 'Pembelian',
+                };
+
+                transaction(data);
+            });
+
+            toast({
+                title: 'Berhasil',
+                description: `${items.length} pembelian massal telah dicatat`,
+            });
+
+            setBulkOpen(false);
         } catch (error) {
             toast({
                 title: 'Error',
@@ -152,10 +183,20 @@ export default function PurchasesPage({
                             Catat pembelian barang untuk menambah stok
                         </p>
                     </div>
-                    <Button onClick={() => setOpen(true)} className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Tambah Pembelian
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            onClick={() => setBulkOpen(true)}
+                            variant="outline"
+                            className="gap-2"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Pembelian Massal
+                        </Button>
+                        <Button onClick={() => setOpen(true)} className="gap-2">
+                            <Plus className="h-4 w-4" />
+                            Tambah Pembelian
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -359,6 +400,16 @@ export default function PurchasesPage({
                     title="Hapus Pembelian"
                     description="Apakah Anda yakin ingin menghapus pembelian ini? Stok barang akan dikembalikan."
                     onConfirm={handleConfirmDelete}
+                />
+
+                <BulkTransactionDialog
+                    open={bulkOpen}
+                    onOpenChange={setBulkOpen}
+                    products={products}
+                    initialSalesmen={initialSalesmen}
+                    type="purchase"
+                    categories={categories}
+                    onSubmit={handleBulkPurchase}
                 />
 
                 <TransactionDialog

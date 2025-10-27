@@ -1,5 +1,6 @@
 'use client';
 
+import { BulkTransactionDialog } from '@/components/stockhub/bulk-transaction-dialog';
 import { TransactionDialog } from '@/components/stockhub/transaction-dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +22,13 @@ import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateIna } from '@/lib/date';
 import { transaction } from '@/lib/storage';
-import type { Category, PaginatedResponse, Product, Sale } from '@/lib/types';
+import type {
+    Category,
+    PaginatedResponse,
+    Product,
+    Sale,
+    Salesman,
+} from '@/lib/types';
 import { dashboard } from '@/routes';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
@@ -32,16 +39,20 @@ interface initialData {
     products: Product[];
     penjualans: PaginatedResponse<Sale>;
     categories: Category[];
+    initialSalesmen: Salesman[];
 }
 
 export default function SalesPage({
     products,
     penjualans,
+    initialSalesmen,
     categories,
 }: initialData) {
     const sales = penjualans.data;
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [bulkOpen, setBulkOpen] = useState(false);
+
     const [deleteConfirm, setDeleteConfirm] = useState<{
         open: boolean;
         id: string;
@@ -114,6 +125,47 @@ export default function SalesPage({
         },
     ];
 
+    const handleBulkSale = (items: any[]) => {
+        try {
+            items.forEach((item) => {
+                const product = products.find(
+                    (p) => p.code === item.productCode,
+                );
+
+                if (!product) return;
+
+                if (item.quantity > product.quantity) {
+                    throw new Error(`Stok ${product.name} tidak cukup`);
+                }
+
+                const data = {
+                    barang_id: item.productCode,
+                    quantity: item.quantity,
+                    unit_price: item.unitPrice,
+                    type: 'Penjualan',
+                };
+
+                transaction(data);
+            });
+
+            toast({
+                title: 'Berhasil',
+                description: `${items.length} penjualan massal telah dicatat`,
+            });
+
+            setBulkOpen(false);
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description:
+                    error instanceof Error
+                        ? error.message
+                        : 'Terjadi kesalahan',
+                variant: 'destructive',
+            });
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
@@ -127,13 +179,23 @@ export default function SalesPage({
                             Catat penjualan dan kurangi stok
                         </p>
                     </div>
-                    <Button
-                        onClick={() => setIsDialogOpen(true)}
-                        className="gap-2"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Catat Penjualan
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            onClick={() => setBulkOpen(true)}
+                            variant="outline"
+                            className="gap-2"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Penjualan Massal
+                        </Button>
+                        <Button
+                            onClick={() => setIsDialogOpen(true)}
+                            className="gap-2"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Catat Penjualan
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -334,6 +396,16 @@ export default function SalesPage({
                         </div>
                     </div>
                 </div>
+
+                <BulkTransactionDialog
+                    open={bulkOpen}
+                    onOpenChange={setBulkOpen}
+                    products={products}
+                    categories={categories}
+                    initialSalesmen={initialSalesmen}
+                    type="sale"
+                    onSubmit={handleBulkSale}
+                />
 
                 <TransactionDialog
                     initialSalesmen={[]}

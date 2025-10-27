@@ -8,6 +8,18 @@ import type {
 } from '@/lib/types';
 
 import { store as storeProduct } from '@/routes/product';
+
+import {
+    store as storekriteria,
+    update as uptKriteria,
+} from '@/routes/categorie';
+
+import {
+    destroy as dstSalesman,
+    store as storeSalesmen,
+    update as uptSalesman,
+} from '@/routes/salesmen';
+
 import { store as storeTransaction } from '@/routes/transaction';
 import { router } from '@inertiajs/react';
 
@@ -111,30 +123,26 @@ export function getCategories(): Category[] {
     return data ? JSON.parse(data) : [];
 }
 
-export function addCategory(
-    category: Omit<Category, 'id' | 'createdAt'>,
-): Category {
-    const categories = getCategories();
-    const newCategory: Category = {
-        ...category,
-        id: Date.now().toString(),
-        createdAt: new Date(),
-    };
-    categories.push(newCategory);
-    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
-    return newCategory;
+export function addCategory(data: any) {
+    router.post(storekriteria().url, data, {
+        onSuccess: () => {
+            // Optionally handle success
+        },
+        onError: (err) => {
+            console.log(err);
+        },
+    });
 }
 
-export function updateCategory(
-    id: string,
-    updates: Partial<Category>,
-): Category | null {
-    const categories = getCategories();
-    const index = categories.findIndex((c) => c.id === id);
-    if (index === -1) return null;
-    categories[index] = { ...categories[index], ...updates };
-    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
-    return categories[index];
+export function updateCategory(id: number, updates: any) {
+    router.put(uptKriteria(id).url, updates, {
+        onSuccess: () => {
+            // Optionally handle success
+        },
+        onError: (err) => {
+            console.log(err);
+        },
+    });
 }
 
 export function deleteCategory(id: string): boolean {
@@ -203,6 +211,19 @@ export function transaction(data: any) {
     });
 }
 
+export function transactionMassal(data: any) {
+    router.post(storeTransaction().url, data, {
+        onSuccess: () => {
+            return data.type + ' Berhasil';
+        },
+        onError: (err) => {
+            console.log(err);
+
+            return err;
+        },
+    });
+}
+
 // Stock History
 export function getStockHistory(): StockHistory[] {
     if (typeof window === 'undefined') return [];
@@ -231,38 +252,37 @@ export function getSalesmen(): Salesman[] {
     return data ? JSON.parse(data) : [];
 }
 
-export function addSalesman(
-    salesman: Omit<Salesman, 'id' | 'createdAt'>,
-): Salesman {
-    const salesmen = getSalesmen();
-    const newSalesman: Salesman = {
-        ...salesman,
-        id: Date.now().toString(),
-        createdAt: new Date(),
-    };
-    salesmen.push(newSalesman);
-    localStorage.setItem(STORAGE_KEYS.SALESMEN, JSON.stringify(salesmen));
-    return newSalesman;
+export function addSalesman(salesman: any) {
+    router.post(storeSalesmen().url, salesman, {
+        onSuccess: () => {
+            // Optionally handle success
+        },
+        onError: (err) => {
+            console.log(err);
+        },
+    });
 }
 
-export function updateSalesman(
-    id: string,
-    updates: Partial<Salesman>,
-): Salesman | null {
-    const salesmen = getSalesmen();
-    const index = salesmen.findIndex((s) => s.id === id);
-    if (index === -1) return null;
-    salesmen[index] = { ...salesmen[index], ...updates };
-    localStorage.setItem(STORAGE_KEYS.SALESMEN, JSON.stringify(salesmen));
-    return salesmen[index];
+export function updateSalesman(id: number, updates: any) {
+    router.put(uptSalesman(id).url, updates, {
+        onSuccess: () => {
+            // Optionally handle success
+        },
+        onError: (err) => {
+            console.log(err);
+        },
+    });
 }
 
-export function deleteSalesman(id: string): boolean {
-    const salesmen = getSalesmen();
-    const filtered = salesmen.filter((s) => s.id !== id);
-    if (filtered.length === salesmen.length) return false;
-    localStorage.setItem(STORAGE_KEYS.SALESMEN, JSON.stringify(filtered));
-    return true;
+export function deleteSalesman(id: number) {
+    router.delete(dstSalesman(id).url, {
+        onSuccess: () => {
+            // Optionally handle success
+        },
+        onError: (err) => {
+            console.log(err);
+        },
+    });
 }
 
 // Purchases

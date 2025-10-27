@@ -32,8 +32,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Route::get('sellings', [PenjualanController::class, 'index'])->name('selling.index');
 
     Route::get('salesmens', [SalesController::class, 'index'])->name('salesmen.index');
+    Route::post('salesmens/store', [SalesController::class, 'store'])->name('salesmen.store');
+    Route::put('salesmens/update/{sales:id}', [SalesController::class, 'update'])->name('salesmen.update');
+    Route::delete('salesmens/delete/{sales:id}', [SalesController::class, 'destroy'])->name('salesmen.destroy');
 
     Route::get('categories', [KategoriBarangController::class, 'index'])->name('categorie.index');
+    Route::post('categories/store', [KategoriBarangController::class, 'store'])->name('categorie.store');
+    Route::put('categories/update/{KategoriBarang}', [KategoriBarangController::class, 'update'])->name('categorie.update');
+    Route::delete('categories/{KategoriBarang}', [KategoriBarangController::class, 'destroy'])->name('categorie.destroy');
 });
 
 require __DIR__ . '/settings.php';

@@ -14,7 +14,7 @@ interface ComboboxItem {
 
 interface ComboboxProps {
   items: ComboboxItem[]
-  value: string
+  value: Number
   onValueChange: (value: string) => void
   searchValue: string
   onSearchChange: (value: string) => void

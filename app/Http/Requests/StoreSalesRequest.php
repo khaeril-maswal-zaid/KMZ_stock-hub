@@ -11,7 +11,7 @@ class StoreSalesRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,7 @@ class StoreSalesRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:100'],
-            'email' => ['nullable', 'email', 'max:100', 'unique:salesmen,email'],
+            'email' => ['nullable', 'email', 'max:100', 'unique:sales,email'],
             'phone' => ['nullable', 'string', 'max:20'],
         ];
     }

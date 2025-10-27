@@ -15,7 +15,11 @@ class KategoriBarangController extends Controller
      */
     public function index(): Response
     {
-        return Inertia::render('categories/page');
+        $data = [
+            'categories' => KategoriBarang::select('id', 'name', 'description')->orderBy('name', 'asc')->get()
+        ];
+
+        return Inertia::render('categories/page', $data);
     }
 
     /**

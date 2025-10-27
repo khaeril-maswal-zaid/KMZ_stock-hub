@@ -30,16 +30,15 @@ export interface Salesman {
     name: string;
     email?: string;
     phone?: string;
-    createdAt: Date;
 }
 
 export interface Product {
+    id: Number;
     name: string;
     kategori_barang_id: number;
     price: number;
     unit: 'PCS' | 'KOLI';
     quantity: number;
-    id?: number;
     code?: string;
     category?: Category;
 }

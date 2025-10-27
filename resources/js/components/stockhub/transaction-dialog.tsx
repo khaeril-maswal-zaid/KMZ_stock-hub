@@ -166,7 +166,7 @@ export function TransactionDialog({
                             items={filteredProducts.map((product) => {
                                 return {
                                     value: product.code,
-                                    label: `${product.name} _ ${product.code}`,
+                                    label: `${product.code} _ ${product.name}`,
                                     description: `${product.category?.name} • Stok: ${product.quantity} ${product.unit}`,
                                 };
                             })}

@@ -12,16 +12,19 @@ import {
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
-import { deleteCategory, getCategories } from '@/lib/storage';
+import { deleteCategory } from '@/lib/storage';
 import type { Category } from '@/lib/types';
 import { dashboard } from '@/routes';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Edit2, Plus, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-export default function CategoriesPage() {
-    const [categories, setCategories] = useState<Category[]>([]);
+interface initialData {
+    categories: Category[];
+}
+
+export default function CategoriesPage({ categories }: initialData) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(
         null,
@@ -32,21 +35,13 @@ export default function CategoriesPage() {
     }>({ open: false, id: '' });
     const { toast } = useToast();
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = () => {
-        setCategories(getCategories());
-    };
-
     const handleDelete = (id: string) => {
         setDeleteConfirm({ open: true, id });
     };
 
     const handleConfirmDelete = () => {
         deleteCategory(deleteConfirm.id);
-        loadData();
+
         toast({
             title: 'Berhasil',
             description: 'Kategori telah dihapus',
@@ -67,7 +62,6 @@ export default function CategoriesPage() {
     const handleDialogClose = () => {
         setIsDialogOpen(false);
         setEditingCategory(null);
-        loadData();
     };
 
     const breadcrumbs: BreadcrumbItem[] = [

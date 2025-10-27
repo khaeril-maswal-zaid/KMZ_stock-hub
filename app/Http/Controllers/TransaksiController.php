@@ -66,15 +66,7 @@ class TransaksiController extends Controller
     {
         $barang = Barang::where('code', $request->barang_id)->firstOrFail();
 
-        if ($request->type == 'Pembelian') {
-
-            $newQuantity = $barang->quantity + $request->quantity;
-        } elseif ($request->type == 'Penjualan') {
-
-            $newQuantity = $barang->quantity - $request->quantity;
-        } else {
-            return back()->withErrors(['type' => 'Tipe barang tidak valid (harus Pembelian atau Penjualan).']);
-        }
+        $newQuantity = $barang->quantity + ($request->type === 'Pembelian' ? $request->quantity : -$request->quantity);
 
         if ($newQuantity < 0) {
             return back()->withErrors(['quantity' => 'Stok tidak mencukupi untuk transaksi ini.']);
