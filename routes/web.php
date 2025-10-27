@@ -38,8 +38,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('categories', [KategoriBarangController::class, 'index'])->name('categorie.index');
     Route::post('categories/store', [KategoriBarangController::class, 'store'])->name('categorie.store');
-    Route::put('categories/update/{KategoriBarang}', [KategoriBarangController::class, 'update'])->name('categorie.update');
-    Route::delete('categories/{KategoriBarang}', [KategoriBarangController::class, 'destroy'])->name('categorie.destroy');
+    Route::put('categories/update/{kategoriBarang:id}', [KategoriBarangController::class, 'update'])->name('categorie.update');
+    Route::delete('categories/{kategoriBarang:id}', [KategoriBarangController::class, 'destroy'])->name('categorie.destroy');
 });
 
 require __DIR__ . '/settings.php';

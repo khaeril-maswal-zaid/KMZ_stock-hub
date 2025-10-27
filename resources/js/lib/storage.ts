@@ -10,7 +10,8 @@ import type {
 import { store as storeProduct } from '@/routes/product';
 
 import {
-    store as storekriteria,
+    destroy as destroyKriteria,
+    store as storeKriteria,
     update as uptKriteria,
 } from '@/routes/categorie';
 
@@ -32,90 +33,6 @@ const STORAGE_KEYS = {
     SALESMEN: 'stock_salesmen',
 };
 
-// Mock data
-const mockCategories: Category[] = [
-    {
-        id: '1',
-        name: 'Elektronik',
-        description: 'Produk elektronik',
-        createdAt: new Date(),
-    },
-    {
-        id: '2',
-        name: 'Pakaian',
-        description: 'Produk pakaian',
-        createdAt: new Date(),
-    },
-    {
-        id: '3',
-        name: 'Makanan',
-        description: 'Produk makanan',
-        createdAt: new Date(),
-    },
-];
-
-const mockSalesmen: Salesman[] = [
-    {
-        id: 's1',
-        name: 'Budi Santoso',
-        email: 'budi@example.com',
-        phone: '081234567890',
-        createdAt: new Date(),
-    },
-    {
-        id: 's2',
-        name: 'Siti Nurhaliza',
-        email: 'siti@example.com',
-        phone: '081234567891',
-        createdAt: new Date(),
-    },
-    {
-        id: 's3',
-        name: 'Ahmad Wijaya',
-        email: 'ahmad@example.com',
-        phone: '081234567892',
-        createdAt: new Date(),
-    },
-];
-
-const mockSales: Sale[] = [
-    {
-        id: '1',
-        productId: '1',
-        quantity: 1,
-        unitPrice: 12000000,
-        totalPrice: 12000000,
-        saleDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    },
-    {
-        id: '2',
-        productId: '2',
-        quantity: 3,
-        unitPrice: 850000,
-        totalPrice: 2550000,
-        saleDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    },
-];
-
-const mockPurchases: Purchase[] = [
-    {
-        id: 'p1',
-        productId: '1',
-        quantity: 5,
-        unitPrice: 11000000,
-        totalPrice: 55000000,
-        purchaseDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-    },
-    {
-        id: 'p2',
-        productId: '2',
-        quantity: 25,
-        unitPrice: 800000,
-        totalPrice: 20000000,
-        purchaseDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    },
-];
-
 // Categories
 export function getCategories(): Category[] {
     if (typeof window === 'undefined') return [];
@@ -124,7 +41,7 @@ export function getCategories(): Category[] {
 }
 
 export function addCategory(data: any) {
-    router.post(storekriteria().url, data, {
+    router.post(storeKriteria().url, data, {
         onSuccess: () => {
             // Optionally handle success
         },
@@ -145,12 +62,15 @@ export function updateCategory(id: number, updates: any) {
     });
 }
 
-export function deleteCategory(id: string): boolean {
-    const categories = getCategories();
-    const filtered = categories.filter((c) => c.id !== id);
-    if (filtered.length === categories.length) return false;
-    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(filtered));
-    return true;
+export function deleteCategory(id: number) {
+    router.delete(destroyKriteria(id).url, {
+        onSuccess: () => {
+            // Optionally handle success
+        },
+        onError: (err) => {
+            console.log(err);
+        },
+    });
 }
 
 // Products

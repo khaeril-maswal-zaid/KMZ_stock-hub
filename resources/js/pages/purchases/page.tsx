@@ -106,7 +106,7 @@ export default function PurchasesPage({
         try {
             items.forEach((item) => {
                 const data = {
-                    barang_id: item.productCode,
+                    barang_id: item.productId,
                     quantity: item.quantity,
                     unit_price: item.unitPrice,
                     salesman: item.salesId,

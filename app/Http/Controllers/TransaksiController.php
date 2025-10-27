@@ -64,7 +64,7 @@ class TransaksiController extends Controller
      */
     public function store(StoreTransaksiRequest $request)
     {
-        $barang = Barang::where('code', $request->barang_id)->firstOrFail();
+        $barang = Barang::findOrFail($request->barang_id);
 
         $newQuantity = $barang->quantity + ($request->type === 'Pembelian' ? $request->quantity : -$request->quantity);
 

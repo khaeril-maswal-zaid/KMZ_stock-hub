@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
+import { formatDateIna } from '@/lib/date';
 import { addSalesman, deleteSalesman, updateSalesman } from '@/lib/storage';
 import type { Salesman } from '@/lib/types';
 import { dashboard } from '@/routes';
@@ -49,12 +50,12 @@ export default function SalesmenPage({ salesmen }: initialData) {
 
     const [deleteConfirm, setDeleteConfirm] = useState<{
         open: boolean;
-        id: string;
-    }>({ open: false, id: '' });
+        id: number;
+    }>({ open: false, id: 0 });
 
     const { toast } = useToast();
 
-    const handleDelete = (id: string) => {
+    const handleDelete = (id: number) => {
         setDeleteConfirm({ open: true, id });
     };
 
@@ -65,7 +66,7 @@ export default function SalesmenPage({ salesmen }: initialData) {
             title: 'Berhasil',
             description: 'Sales telah dihapus',
         });
-        setDeleteConfirm({ open: false, id: '' });
+        setDeleteConfirm({ open: false, id: 0 });
     };
     const handleEdit = (salesman: Salesman) => {
         setEditingSalesman(salesman);
@@ -184,89 +185,66 @@ export default function SalesmenPage({ salesmen }: initialData) {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-border">
-                                        <th className="px-4 py-3 text-left font-semibold">
-                                            Nama
-                                        </th>
-                                        <th className="px-4 py-3 text-left font-semibold">
-                                            Email
-                                        </th>
-                                        <th className="px-4 py-3 text-left font-semibold">
-                                            Telepon
-                                        </th>
-
-                                        <th className="px-4 py-3 text-center font-semibold">
-                                            Aksi
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredSalesmen.map((salesman) => (
-                                        <tr
-                                            key={salesman.email}
-                                            className="transition-smooth border-b border-border hover:bg-muted/30"
-                                        >
-                                            <td className="px-4 py-3 font-medium">
-                                                {salesman.name}
-                                            </td>
-                                            <td className="items-center px-4 py-3 text-muted-foreground">
-                                                {salesman.email ? (
-                                                    <>
-                                                        <Mail className="inline h-4 w-4" />
-                                                        {' ' + salesman.email}
-                                                    </>
-                                                ) : (
-                                                    '-'
-                                                )}
-                                            </td>
-                                            <td className="items-center px-4 py-3 text-muted-foreground">
-                                                {salesman.phone ? (
-                                                    <>
-                                                        <Phone className="inline h-4 w-4" />
-                                                        {' ' + salesman.phone}
-                                                    </>
-                                                ) : (
-                                                    '-'
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex justify-center gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            handleEdit(salesman)
-                                                        }
-                                                        className="h-8 w-8 p-0"
-                                                    >
-                                                        <Edit2 className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            handleDelete(
-                                                                salesman.id,
-                                                            )
-                                                        }
-                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            {filteredSalesmen.length === 0 && (
-                                <div className="py-8 text-center text-muted-foreground">
-                                    Tidak ada sales ditemukan
-                                </div>
-                            )}
+                        {/* Salesmen Grid */}
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {filteredSalesmen.map((salesman) => (
+                                <Card
+                                    key={salesman.id}
+                                    className="transition-smooth border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-blue-50/50 hover:shadow-lg dark:from-blue-950/20 dark:to-blue-950/10"
+                                >
+                                    <CardHeader>
+                                        <CardTitle className="text-lg">
+                                            {salesman.name}
+                                        </CardTitle>
+                                        <CardDescription className="text-xs">
+                                            Bergabung:{' '}
+                                            {formatDateIna(salesman.created_at)}
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-3">
+                                        {salesman.email && (
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <Mail className="h-4 w-4 text-muted-foreground" />
+                                                <span className="text-muted-foreground">
+                                                    {salesman.email}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {salesman.phone && (
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <Phone className="h-4 w-4 text-muted-foreground" />
+                                                <span className="text-muted-foreground">
+                                                    {salesman.phone}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div className="flex gap-2 pt-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() =>
+                                                    handleEdit(salesman)
+                                                }
+                                                className="flex-1 gap-2"
+                                            >
+                                                <Edit2 className="h-4 w-4" />
+                                                Edit
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() =>
+                                                    handleDelete(salesman.id)
+                                                }
+                                                className="flex-1 gap-2 text-destructive hover:text-destructive"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                                Hapus
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
                         </div>
                     </CardContent>
                 </Card>

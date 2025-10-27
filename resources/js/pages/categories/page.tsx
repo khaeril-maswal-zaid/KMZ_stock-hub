@@ -17,9 +17,8 @@ import type { Category } from '@/lib/types';
 import { dashboard } from '@/routes';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { Edit2, Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit2, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-
 interface initialData {
     categories: Category[];
 }
@@ -31,11 +30,12 @@ export default function CategoriesPage({ categories }: initialData) {
     );
     const [deleteConfirm, setDeleteConfirm] = useState<{
         open: boolean;
-        id: string;
-    }>({ open: false, id: '' });
+        id: number;
+    }>({ open: false, id: 0 });
+    const [currentPage, setCurrentPage] = useState(1);
     const { toast } = useToast();
 
-    const handleDelete = (id: string) => {
+    const handleDelete = (id: number) => {
         setDeleteConfirm({ open: true, id });
     };
 
@@ -46,7 +46,7 @@ export default function CategoriesPage({ categories }: initialData) {
             title: 'Berhasil',
             description: 'Kategori telah dihapus',
         });
-        setDeleteConfirm({ open: false, id: '' });
+        setDeleteConfirm({ open: false, id: 0 });
     };
 
     const handleEdit = (category: Category) => {
@@ -71,6 +71,13 @@ export default function CategoriesPage({ categories }: initialData) {
         },
     ];
 
+    const ITEMS_PER_PAGE = 5;
+
+    const totalPages = Math.ceil(categories.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedCategories = categories.slice(startIndex, endIndex);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
@@ -90,48 +97,145 @@ export default function CategoriesPage({ categories }: initialData) {
                     </Button>
                 </div>
 
-                {/* Categories Grid */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {categories.map((category) => (
-                        <Card
-                            key={category.id}
-                            className="transition-smooth hover:shadow-lg"
-                        >
-                            <CardHeader>
-                                <CardTitle className="text-lg">
-                                    {category.name}
-                                </CardTitle>
-                                <CardDescription>
-                                    {category.description || 'Tanpa deskripsi'}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
+                {/* Categories Table */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Daftar Kategori</CardTitle>
+                        <CardDescription>
+                            {categories.length} kategori
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-border">
+                                        <th className="px-4 py-3 text-left font-semibold">
+                                            Nama Kategori
+                                        </th>
+                                        <th className="px-4 py-3 text-left font-semibold">
+                                            Deskripsi
+                                        </th>
+                                        <th className="px-4 py-3 text-center font-semibold">
+                                            Aksi
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paginatedCategories.map((category) => (
+                                        <tr
+                                            key={category.id}
+                                            className="transition-smooth border-b border-border hover:bg-muted/30"
+                                        >
+                                            <td className="px-4 py-3 font-medium">
+                                                {category.name}
+                                            </td>
+                                            <td className="px-4 py-3 text-muted-foreground">
+                                                {category.description || '-'}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex justify-center gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            handleEdit(category)
+                                                        }
+                                                        className="h-8 w-8 p-0"
+                                                    >
+                                                        <Edit2 className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            handleDelete(
+                                                                category.id,
+                                                            )
+                                                        }
+                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {paginatedCategories.length === 0 && (
+                                <div className="py-8 text-center text-muted-foreground">
+                                    Tidak ada kategori ditemukan
+                                </div>
+                            )}
+                        </div>
+
+                        {categories.length > 0 && (
+                            <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+                                <div className="text-sm text-muted-foreground">
+                                    Menampilkan {startIndex + 1}-
+                                    {Math.min(endIndex, categories.length)} dari{' '}
+                                    {categories.length} kategori
+                                </div>
                                 <div className="flex gap-2">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => handleEdit(category)}
-                                        className="flex-1 gap-2"
+                                        onClick={() =>
+                                            setCurrentPage(
+                                                Math.max(1, currentPage - 1),
+                                            )
+                                        }
+                                        disabled={currentPage === 1}
+                                        className="gap-2"
                                     >
-                                        <Edit2 className="h-4 w-4" />
-                                        Edit
+                                        <ChevronLeft className="h-4 w-4" />
+                                        Sebelumnya
                                     </Button>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from(
+                                            { length: totalPages },
+                                            (_, i) => i + 1,
+                                        ).map((page) => (
+                                            <Button
+                                                key={page}
+                                                variant={
+                                                    currentPage === page
+                                                        ? 'default'
+                                                        : 'outline'
+                                                }
+                                                size="sm"
+                                                onClick={() =>
+                                                    setCurrentPage(page)
+                                                }
+                                                className="h-8 w-8 p-0"
+                                            >
+                                                {page}
+                                            </Button>
+                                        ))}
+                                    </div>
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={() =>
-                                            handleDelete(category.id)
+                                            setCurrentPage(
+                                                Math.min(
+                                                    totalPages,
+                                                    currentPage + 1,
+                                                ),
+                                            )
                                         }
-                                        className="flex-1 gap-2 text-destructive hover:text-destructive"
+                                        disabled={currentPage === totalPages}
+                                        className="gap-2"
                                     >
-                                        <Trash2 className="h-4 w-4" />
-                                        Hapus
+                                        Selanjutnya
+                                        <ChevronRight className="h-4 w-4" />
                                     </Button>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
 
                 {categories.length === 0 && (
                     <Card>

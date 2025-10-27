@@ -7,15 +7,15 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 interface ComboboxItem {
-  value: string
+  value: number
   label: string
   description?: string
 }
 
 interface ComboboxProps {
   items: ComboboxItem[]
-  value: Number
-  onValueChange: (value: string) => void
+  value: number
+  onValueChange: (value: number) => void
   searchValue: string
   onSearchChange: (value: string) => void
   open: boolean
@@ -35,7 +35,6 @@ export function Combobox({
   placeholder = "Select item...",
   searchPlaceholder = "Search...",
 }: ComboboxProps) {
-
   const selectedItem = items.find((item) => item.value === value)
 
   return (
@@ -59,18 +58,21 @@ export function Combobox({
             <CommandGroup>
               {items.map((item) => (
                 <CommandItem
-                  key={item.value}
-                  value={item.value}
-                  onSelect={(currentValue) => {
-                    onValueChange(currentValue === value ? "" : currentValue)
-                    onOpenChange(false)
-                  }}
-                >
-                  <Check className={cn("mr-2 h-4 w-4", value === item.value ? "opacity-100" : "opacity-0")} />
-                  <div className="flex flex-col">
-                    <span>{item.label}</span>
-                    {item.description && <span className="text-xs text-muted-foreground">{item.description}</span>}
-                  </div>
+                    key={item.value}
+                    value={item.value}
+                    onSelect={
+                        () => {onValueChange(item.value), onOpenChange(false)}
+                    }
+                    >
+                    <Check className={cn("mr-2 h-4 w-4", value === item.value ? "opacity-100" : "opacity-0")} />
+                    <div className="flex flex-col">
+                        <span>{item.label}</span>
+                        {item.description && (
+                            <span className="text-sm text-muted-foreground">
+                                {item.description}
+                            </span>
+                        )}
+                    </div>
                 </CommandItem>
               ))}
             </CommandGroup>

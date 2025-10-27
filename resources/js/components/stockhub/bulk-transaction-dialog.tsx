@@ -28,12 +28,12 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import type { Category, Product, Salesman } from '@/lib/types';
 import { Plus, Trash2 } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 
 interface BulkItem {
     id: string;
     productId: number;
-    salesId?: string; // optional on items (purchase only)
+    salesId: string;
     quantity: number;
     unitPrice: number;
 }
@@ -66,116 +66,59 @@ export function BulkTransactionDialog({
         Record<string, boolean>
     >({});
 
-    const handleAddItem = useCallback(() => {
+    const handleAddItem = () => {
         const newItem: BulkItem = {
             id: Date.now().toString(),
             productId: 0,
-            salesId: 'none',
             quantity: 1,
             unitPrice: 0,
+            salesId: '',
         };
-        setItems((prev) => [...prev, newItem]);
-    }, []);
+        setItems([...items, newItem]);
+    };
 
-    const handleRemoveItem = useCallback((id: number) => {
-        setItems((prev) => prev.filter((i) => Number(i.id) !== id));
+    const handleRemoveItem = (id: string) => {
+        setItems(items.filter((item) => item.id !== id));
+        const newSearchValues = { ...searchValues };
+        delete newSearchValues[id];
+        setSearchValues(newSearchValues);
+    };
 
-        setSearchValues((prev) => {
-            const copy = { ...prev };
-            delete copy[id];
-            return copy;
-        });
-        setOpenComboboxes((prev) => {
-            const copy = { ...prev };
-            delete copy[id];
-            return copy;
-        });
-    }, []);
+    const handleUpdateItem = <K extends keyof BulkItem>(
+        id: string,
+        field: K,
+        value: BulkItem[K],
+    ) => {
+        setItems((prevItems) =>
+            prevItems.map((item) => {
+                if (item.id !== id) return item;
 
-    const handleUpdateItem = useCallback(
-        <K extends keyof BulkItem>(
-            id: string,
-            field: K,
-            value: BulkItem[K],
-        ) => {
-            setItems((prevItems) =>
-                prevItems.map((item) => {
-                    if (item.id !== id) return item;
+                // Update harga otomatis untuk SALE
+                if (field === 'productId' && type === 'sale') {
+                    const product = products.find((p) => p.id === value);
 
-                    // When product changes on sale, set unitPrice from product.price
-                    if (field === 'productId' && type === 'sale') {
-                        const product = products.find(
-                            (p) => Number(p.id) === value,
-                        );
-                        return {
-                            ...item,
-                            [field]: value,
-                            unitPrice: product ? product.price : 0,
-                        } as BulkItem;
-                    }
+                    return {
+                        ...item,
+                        [field]: value,
+                        unitPrice: product ? product.price : 0,
+                    };
+                }
 
-                    return { ...item, [field]: value } as BulkItem;
-                }),
-            );
-        },
-        [products, type],
-    );
+                // Default update
+                return { ...item, [field]: value };
+            }),
+        );
+    };
 
-    const safeNumberFromInput = useCallback((v: string | number) => {
-        const n = typeof v === 'number' ? v : Number(v);
-        return Number.isFinite(n) ? n : 0;
-    }, []);
+    const handleSubmit = () => {
+        // Validate all items
+        const invalidItems = items.filter(
+            (item) =>
+                !item.productId ||
+                item.quantity <= 0 ||
+                (type === 'purchase' && item.unitPrice <= 0),
+        );
 
-    const getProductByCode = useCallback(
-        (id?: Number) => {
-            if (!id && id !== '') return undefined;
-            return products.find((p) => Number(p.id) === Number(id));
-        },
-        [products],
-    );
-
-    const getProductCategory = useCallback(
-        (productId?: Number) => {
-            const product = getProductByCode(productId);
-            if (!product) return '';
-            // prefer product.category if available, otherwise lookup by kategori_barang_id
-            return (
-                product.category?.name ??
-                categories.find(
-                    (c) => Number(c.id) === Number(product.kategori_barang_id),
-                )?.name ??
-                ''
-            );
-        },
-        [categories, getProductByCode],
-    );
-
-    const getProductStock = useCallback(
-        (productId?: Number) => {
-            return getProductByCode(productId)?.quantity ?? 0;
-        },
-        [getProductByCode],
-    );
-
-    const getProductPrice = useCallback(
-        (productId?: Number) => {
-            return getProductByCode(productId)?.price ?? 0;
-        },
-        [getProductByCode],
-    );
-
-    const totalAmount = useMemo(() => {
-        return items.reduce((sum, item) => {
-            const price =
-                type === 'sale'
-                    ? getProductPrice(item.productId)
-                    : item.unitPrice;
-            return sum + item.quantity * price;
-        }, 0);
-    }, [items, getProductPrice, type]);
-
-    const handleSubmit = useCallback(() => {
-        // Basic validations
         if (items.length === 0) {
             toast({
                 title: 'Error',
@@ -185,12 +128,6 @@ export function BulkTransactionDialog({
             return;
         }
 
-        const invalidItems = items.filter(
-            (item) =>
-                !item.productId ||
-                item.quantity <= 0 ||
-                (type === 'purchase' && item.unitPrice <= 0),
-        );
         if (invalidItems.length > 0) {
             toast({
                 title: 'Error',
@@ -201,9 +138,11 @@ export function BulkTransactionDialog({
             return;
         }
 
+        // Validate stock for sales
         if (type === 'sale') {
             for (const item of items) {
-                const product = getProductByCode(item.productId);
+                const product = products.find((p) => p.id == item.productId);
+
                 if (product && item.quantity > product.quantity) {
                     toast({
                         title: 'Error',
@@ -215,40 +154,50 @@ export function BulkTransactionDialog({
             }
         }
 
-        // Submit: keep items local for toast message before clearing state
         onSubmit(items);
+        setItems([]);
+        onOpenChange(false);
         toast({
             title: 'Berhasil',
             description: `${items.length} item telah ditambahkan`,
         });
-        setItems([]);
-        onOpenChange(false);
-    }, [items, onSubmit, onOpenChange, toast, type, getProductByCode]);
+    };
 
-    const getFilteredProducts = useCallback(
-        (itemId: string) => {
-            const search = (searchValues[itemId] || '').trim().toLowerCase();
+    const getFilteredProducts = (itemId: string) => {
+        const search = searchValues[itemId] || '';
 
-            if (!search) return products;
+        return products.filter((product) => {
+            const searchLower = search.toLowerCase();
 
-            return products.filter((product) => {
-                const category = categories.find(
-                    (c) => Number(c.id) === Number(product.kategori_barang_id),
-                );
-                const name = product.name ?? '';
-                const code = String(product.code ?? '');
-                const categoryName =
-                    category?.name ?? product.category?.name ?? '';
+            return (
+                product.name.toLowerCase().includes(searchLower) ||
+                product.code.toLowerCase().includes(searchLower) ||
+                categories
+                    .find((c) => c.id === product.kategori_barang_id)
+                    ?.name.toLowerCase()
+                    .includes(searchLower)
+            );
+        });
+    };
 
-                return (
-                    name.toLowerCase().includes(search) ||
-                    code.toLowerCase().includes(search) ||
-                    categoryName.toLowerCase().includes(search)
-                );
-            });
-        },
-        [categories, products, searchValues],
-    );
+    const getProductCategory = (productId: number) => {
+        return products.find((p) => p.id === productId)?.category?.name || '';
+    };
+
+    const getProductStock = (productId: number) => {
+        return products.find((p) => p.id === productId)?.quantity || 0;
+    };
+
+    const getProductPrice = (productId: number | number) => {
+        return products.find((p) => p.id === productId)?.price || 0;
+    };
+
+    const totalAmount = items.reduce((sum, item) => {
+        const price =
+            type === 'sale' ? getProductPrice(item.productId) : item.unitPrice;
+
+        return sum + item.quantity * price;
+    }, 0);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -267,6 +216,7 @@ export function BulkTransactionDialog({
                 </DialogHeader>
 
                 <div className="space-y-4">
+                    {/* Items Table */}
                     <div className="overflow-hidden rounded-lg border">
                         <Table>
                             <TableHeader>
@@ -295,7 +245,6 @@ export function BulkTransactionDialog({
                                     </TableHead>
                                 </TableRow>
                             </TableHeader>
-
                             <TableBody>
                                 {items.length === 0 ? (
                                     <TableRow>
@@ -309,15 +258,11 @@ export function BulkTransactionDialog({
                                     </TableRow>
                                 ) : (
                                     items.map((item) => {
-                                        const filtered = getFilteredProducts(
-                                            item.id,
-                                        );
+                                        const filteredProducts =
+                                            getFilteredProducts(item.id);
 
                                         return (
-                                            <TableRow
-                                                key={item.id}
-                                                className="hover:bg-muted/50"
-                                            >
+                                            <TableRow key={item.id}>
                                                 {type === 'purchase' && (
                                                     <TableCell>
                                                         <Select
@@ -328,14 +273,11 @@ export function BulkTransactionDialog({
                                                                 handleUpdateItem(
                                                                     item.id,
                                                                     'salesId',
-                                                                    value ??
-                                                                        'none',
+                                                                    value,
                                                                 )
                                                             }
                                                         >
-                                                            <SelectTrigger
-                                                                id={`salesman-${item.id}`}
-                                                            >
+                                                            <SelectTrigger id="salesman">
                                                                 <SelectValue placeholder="Pilih sales" />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -365,70 +307,47 @@ export function BulkTransactionDialog({
 
                                                 <TableCell>
                                                     <Combobox
-                                                        items={filtered.map(
+                                                        items={filteredProducts.map(
                                                             (product) => ({
                                                                 value: product.id,
                                                                 label: `${product.code} _ ${product.name}`,
-                                                                description: `${
-                                                                    product
-                                                                        .category
-                                                                        ?.name ??
-                                                                    categories.find(
-                                                                        (c) =>
-                                                                            String(
-                                                                                c.id,
-                                                                            ) ===
-                                                                            String(
-                                                                                product.kategori_barang_id,
-                                                                            ),
-                                                                    )?.name ??
-                                                                    ''
-                                                                } • Stok: ${product.quantity} ${product.unit}`,
+                                                                description: `${product.category?.name} • Stok: ${product.quantity} ${product.unit}`,
                                                             }),
                                                         )}
-                                                        value={Number(
-                                                            item.productId ?? 0,
-                                                        )}
+                                                        value={item.productId}
                                                         onValueChange={(
                                                             value,
                                                         ) =>
                                                             handleUpdateItem(
                                                                 item.id,
                                                                 'productId',
-                                                                Number(value),
+                                                                value,
                                                             )
                                                         }
                                                         searchValue={
                                                             searchValues[
                                                                 item.id
-                                                            ] ?? ''
+                                                            ] || ''
                                                         }
                                                         onSearchChange={(
                                                             value,
                                                         ) =>
-                                                            setSearchValues(
-                                                                (prev) => ({
-                                                                    ...prev,
-                                                                    [item.id]:
-                                                                        value,
-                                                                }),
-                                                            )
+                                                            setSearchValues({
+                                                                ...searchValues,
+                                                                [item.id]:
+                                                                    value,
+                                                            })
                                                         }
                                                         open={
-                                                            !!openComboboxes[
+                                                            openComboboxes[
                                                                 item.id
-                                                            ]
+                                                            ] || false
                                                         }
-                                                        onOpenChange={(
-                                                            isOpen,
-                                                        ) =>
-                                                            setOpenComboboxes(
-                                                                (prev) => ({
-                                                                    ...prev,
-                                                                    [item.id]:
-                                                                        isOpen,
-                                                                }),
-                                                            )
+                                                        onOpenChange={(open) =>
+                                                            setOpenComboboxes({
+                                                                ...openComboboxes,
+                                                                [item.id]: open,
+                                                            })
                                                         }
                                                         placeholder="Pilih produk"
                                                         searchPlaceholder="Cari produk..."
@@ -449,7 +368,7 @@ export function BulkTransactionDialog({
                                                                     item.productId,
                                                                 ) === 0
                                                                     ? 'font-semibold text-red-500'
-                                                                    : 'tabular-nums'
+                                                                    : ''
                                                             }
                                                         >
                                                             {getProductStock(
@@ -462,39 +381,38 @@ export function BulkTransactionDialog({
                                                 <TableCell>
                                                     <Input
                                                         type="number"
-                                                        min={1}
+                                                        min="1"
                                                         value={item.quantity}
-                                                        onChange={(e) => {
-                                                            const val =
-                                                                safeNumberFromInput(
-                                                                    e.target
-                                                                        .value,
-                                                                );
+                                                        onChange={(e) =>
                                                             handleUpdateItem(
                                                                 item.id,
                                                                 'quantity',
-                                                                val,
-                                                            );
-                                                        }}
-                                                        className="w-20 text-right tabular-nums"
+                                                                Number(
+                                                                    e.target
+                                                                        .value,
+                                                                ),
+                                                            )
+                                                        }
+                                                        className="w-20 text-right"
                                                     />
                                                 </TableCell>
 
                                                 <TableCell>
                                                     {type === 'sale' ? (
-                                                        <span className="tabular-nums">
-                                                            Rp.{' '}
-                                                            {getProductPrice(
-                                                                item.productId,
-                                                            ).toLocaleString(
-                                                                'id-ID',
-                                                            )}
+                                                        <span>
+                                                            Rp.
+                                                            {' ' +
+                                                                getProductPrice(
+                                                                    item.productId,
+                                                                ).toLocaleString(
+                                                                    'id-ID',
+                                                                )}
                                                         </span>
                                                     ) : (
                                                         <Input
-                                                            type="number"
-                                                            min={0}
-                                                            step={1000}
+                                                            type=""
+                                                            min="0"
+                                                            step="1000"
                                                             value={
                                                                 item.unitPrice
                                                             }
@@ -502,37 +420,43 @@ export function BulkTransactionDialog({
                                                                 handleUpdateItem(
                                                                     item.id,
                                                                     'unitPrice',
-                                                                    safeNumberFromInput(
+                                                                    Number(
                                                                         e.target
                                                                             .value,
                                                                     ),
                                                                 )
                                                             }
-                                                            className="w-32 text-right tabular-nums"
+                                                            className="w-32 text-right"
                                                             placeholder="0"
                                                         />
                                                     )}
                                                 </TableCell>
 
-                                                <TableCell className="text-right font-semibold tabular-nums">
+                                                <TableCell className="text-right font-semibold">
                                                     Rp.{' '}
-                                                    {(
-                                                        (type === 'sale'
-                                                            ? getProductPrice(
+                                                    {type === 'sale'
+                                                        ? (
+                                                              item.quantity *
+                                                              getProductPrice(
                                                                   item.productId,
                                                               )
-                                                            : item.unitPrice) *
-                                                        item.quantity
-                                                    ).toLocaleString('id-ID')}
+                                                          ).toLocaleString(
+                                                              'id-ID',
+                                                          )
+                                                        : (
+                                                              item.quantity *
+                                                              item.unitPrice
+                                                          ).toLocaleString(
+                                                              'id-ID',
+                                                          )}
                                                 </TableCell>
-
                                                 <TableCell className="text-center">
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={() =>
                                                             handleRemoveItem(
-                                                                Number(item.id),
+                                                                item.id,
                                                             )
                                                         }
                                                         className="text-destructive hover:text-destructive"
@@ -548,15 +472,17 @@ export function BulkTransactionDialog({
                         </Table>
                     </div>
 
+                    {/* Add Item Button */}
                     <Button
                         onClick={handleAddItem}
                         variant="outline"
-                        className="w-full gap-2"
+                        className="w-full gap-2 bg-transparent"
                     >
                         <Plus className="h-4 w-4" />
                         Tambah Item
                     </Button>
 
+                    {/* Summary */}
                     {items.length > 0 && (
                         <div className="rounded-lg border border-border bg-gradient-to-br from-slate-50 to-slate-100/50 p-4 dark:from-slate-950/30 dark:to-slate-900/20">
                             <div className="flex items-center justify-between">
@@ -567,7 +493,7 @@ export function BulkTransactionDialog({
                                     <p className="text-sm text-muted-foreground">
                                         Total Jumlah:{' '}
                                         {items.reduce(
-                                            (sum, it) => sum + it.quantity,
+                                            (sum, item) => sum + item.quantity,
                                             0,
                                         )}
                                     </p>
@@ -584,6 +510,7 @@ export function BulkTransactionDialog({
                         </div>
                     )}
 
+                    {/* Action Buttons */}
                     <div className="flex justify-end gap-3">
                         <Button
                             variant="outline"

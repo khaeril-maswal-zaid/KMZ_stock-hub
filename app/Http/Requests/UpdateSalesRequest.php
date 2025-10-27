@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateSalesRequest extends FormRequest
 {
@@ -19,14 +20,23 @@ class UpdateSalesRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
+
     public function rules(): array
     {
+        $salesId = $this->route('sales'); // ambil id dari parameter route
+
         return [
             'name' => ['required', 'string', 'max:100'],
-            'email' => ['nullable', 'email', 'max:100', 'unique:sales,email'],
+            'email' => [
+                'nullable',
+                'email',
+                'max:100',
+                Rule::unique('sales', 'email')->ignore($salesId),
+            ],
             'phone' => ['nullable', 'string', 'max:20'],
         ];
     }
+
 
     public function messages(): array
     {

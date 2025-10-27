@@ -19,17 +19,18 @@ export interface PaginatedResponse<T> {
 }
 
 export interface Category {
-    id: string;
+    id: number;
     name: string;
     description?: string;
     created_at: Date;
 }
 
 export interface Salesman {
-    id: string;
+    id: number;
     name: string;
     email?: string;
     phone?: string;
+    created_at: string;
 }
 
 export interface Product {
@@ -64,7 +65,7 @@ export interface Sale {
 }
 
 export interface StockHistory {
-    id: string;
+    id: number;
     productId: string;
     type: 'IN' | 'OUT';
     quantity: number;

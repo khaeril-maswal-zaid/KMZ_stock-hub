@@ -25,7 +25,14 @@ import type { Category, Product } from '@/lib/types';
 import { dashboard } from '@/routes';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { Edit2, Plus, Search, Trash2 } from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    Edit2,
+    Plus,
+    Search,
+    Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 
 interface initialData {
@@ -46,6 +53,7 @@ export default function ProductsPage({ products, categories }: initialData) {
         open: boolean;
         id: string;
     }>({ open: false, id: '' });
+    const [currentPage, setCurrentPage] = useState(1);
     const { toast } = useToast();
 
     const handleDelete = (id: string) => {
@@ -77,13 +85,6 @@ export default function ProductsPage({ products, categories }: initialData) {
         setEditingProduct(null);
     };
 
-    const filteredProductsx =
-        categoryFilter === 'all'
-            ? products
-            : products.filter(
-                  (p) => p.kategori_barang_id === Number(categoryFilter),
-              );
-
     const filteredProducts = products.filter(
         (p) =>
             (categoryFilter === 'all' ||
@@ -99,6 +100,12 @@ export default function ProductsPage({ products, categories }: initialData) {
             href: dashboard().url,
         },
     ];
+
+    const ITEMS_PER_PAGE = 5;
+    const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -126,13 +133,19 @@ export default function ProductsPage({ products, categories }: initialData) {
                         <Input
                             placeholder="Cari barang atau kode..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setCurrentPage(1);
+                            }}
                             className="pl-10"
                         />
                     </div>
                     <Select
                         value={categoryFilter}
-                        onValueChange={setCategoryFilter}
+                        onValueChange={(value) => {
+                            setCategoryFilter(value);
+                            setCurrentPage(1);
+                        }}
                     >
                         <SelectTrigger className="w-full md:w-48">
                             <SelectValue />
@@ -148,7 +161,10 @@ export default function ProductsPage({ products, categories }: initialData) {
                     </Select>
                     <Select
                         value={stockFilter}
-                        onValueChange={(value: any) => setStockFilter(value)}
+                        onValueChange={(value: any) => {
+                            setStockFilter(value);
+                            setCurrentPage(1);
+                        }}
                     >
                         <SelectTrigger className="w-full md:w-48">
                             <SelectValue />
@@ -195,7 +211,7 @@ export default function ProductsPage({ products, categories }: initialData) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredProducts.map((product) => (
+                                    {paginatedProducts.map((product) => (
                                         <tr
                                             key={product.code}
                                             className="transition-smooth border-b border-border hover:bg-muted/30"
@@ -259,12 +275,80 @@ export default function ProductsPage({ products, categories }: initialData) {
                                     ))}
                                 </tbody>
                             </table>
-                            {filteredProducts.length === 0 && (
+                            {paginatedProducts.length === 0 && (
                                 <div className="py-8 text-center text-muted-foreground">
                                     Tidak ada barang ditemukan
                                 </div>
                             )}
                         </div>
+
+                        {filteredProducts.length > 0 && (
+                            <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+                                <div className="text-sm text-muted-foreground">
+                                    Menampilkan {startIndex + 1}-
+                                    {Math.min(
+                                        endIndex,
+                                        filteredProducts.length,
+                                    )}{' '}
+                                    dari {filteredProducts.length} barang
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            setCurrentPage(
+                                                Math.max(1, currentPage - 1),
+                                            )
+                                        }
+                                        disabled={currentPage === 1}
+                                        className="gap-2"
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                        Sebelumnya
+                                    </Button>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from(
+                                            { length: totalPages },
+                                            (_, i) => i + 1,
+                                        ).map((page) => (
+                                            <Button
+                                                key={page}
+                                                variant={
+                                                    currentPage === page
+                                                        ? 'default'
+                                                        : 'outline'
+                                                }
+                                                size="sm"
+                                                onClick={() =>
+                                                    setCurrentPage(page)
+                                                }
+                                                className="h-8 w-8 p-0"
+                                            >
+                                                {page}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            setCurrentPage(
+                                                Math.min(
+                                                    totalPages,
+                                                    currentPage + 1,
+                                                ),
+                                            )
+                                        }
+                                        disabled={currentPage === totalPages}
+                                        className="gap-2"
+                                    >
+                                        Selanjutnya
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 

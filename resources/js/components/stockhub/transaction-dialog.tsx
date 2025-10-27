@@ -67,7 +67,7 @@ export function TransactionDialog({
         }
     }, [open]);
 
-    const selectedProduct = products.find((p) => p.code === selectedProductId);
+    const selectedProduct = products.find((p) => p.id === selectedProductId);
 
     const filteredProducts = useMemo(() => {
         if (!searchValue) return products;
@@ -165,7 +165,7 @@ export function TransactionDialog({
                         <Combobox
                             items={filteredProducts.map((product) => {
                                 return {
-                                    value: product.code,
+                                    value: product.id,
                                     label: `${product.code} _ ${product.name}`,
                                     description: `${product.category?.name} • Stok: ${product.quantity} ${product.unit}`,
                                 };
@@ -237,6 +237,7 @@ export function TransactionDialog({
                                     id="quantity"
                                     type=""
                                     placeholder="0"
+                                    autoComplete="off"
                                     value={quantity}
                                     onChange={(e) =>
                                         setQuantity(e.target.value)

@@ -61,7 +61,7 @@ export default function SalesPage({
     const { toast } = useToast();
 
     const handleAddSale = (barang_id: string, quantity: number) => {
-        const product = products.find((p: any) => p.code === barang_id);
+        const product = products.find((p: any) => p.id === barang_id);
 
         if (!product) return;
 
@@ -128,9 +128,7 @@ export default function SalesPage({
     const handleBulkSale = (items: any[]) => {
         try {
             items.forEach((item) => {
-                const product = products.find(
-                    (p) => p.code === item.productCode,
-                );
+                const product = products.find((p) => p.id == item.productId);
 
                 if (!product) return;
 
@@ -139,7 +137,7 @@ export default function SalesPage({
                 }
 
                 const data = {
-                    barang_id: item.productCode,
+                    barang_id: item.productId,
                     quantity: item.quantity,
                     unit_price: item.unitPrice,
                     type: 'Penjualan',

@@ -1,4 +1,3 @@
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -20,8 +19,6 @@ import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import {
     BarChart3,
-    BookOpen,
-    Folder,
     LayoutGrid,
     Package,
     ShoppingCart,
@@ -30,6 +27,7 @@ import {
     Users,
 } from 'lucide-react';
 import AppLogo from './app-logo';
+import { NavFooter } from './nav-footer';
 
 const mainNavItems: NavItem[] = [
     {
@@ -42,16 +40,7 @@ const mainNavItems: NavItem[] = [
         title: 'Barang',
         icon: Package,
     },
-    {
-        href: categorieIndex.url(),
-        title: 'Kategori',
-        icon: Tag,
-    },
-    {
-        href: salesmenIndex.url(),
-        title: 'Sales',
-        icon: Users,
-    },
+
     {
         href: pembelian.url(),
         title: 'Pembelian',
@@ -71,14 +60,14 @@ const mainNavItems: NavItem[] = [
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
+        href: categorieIndex.url(),
+        title: 'Kategori',
+        icon: Tag,
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
+        href: salesmenIndex.url(),
+        title: 'Sales',
+        icon: Users,
     },
 ];
 

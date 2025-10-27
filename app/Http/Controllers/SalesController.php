@@ -16,7 +16,7 @@ class SalesController extends Controller
     public function index(): Response
     {
         $data = [
-            'salesmen' => Sales::select(['id', 'name', 'phone', 'email'])->get()
+            'salesmen' => Sales::select(['id', 'name', 'phone', 'email', 'created_at'])->get()
         ];
 
         return Inertia::render('salesmen/page', $data);
