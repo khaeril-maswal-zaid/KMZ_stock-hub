@@ -146,7 +146,7 @@ export function TransactionDialog({
                                 <SelectTrigger id="salesman">
                                     <SelectValue placeholder="Pilih sales" />
                                 </SelectTrigger>
-                                <SelectContent className="bg-white">
+                                <SelectContent>
                                     <SelectItem value="none">
                                         Tidak ada
                                     </SelectItem>

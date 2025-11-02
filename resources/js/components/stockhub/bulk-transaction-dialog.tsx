@@ -219,7 +219,7 @@ export function BulkTransactionDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[90vh] min-w-4xl overflow-y-auto">
+            <DialogContent className="max-h-[90vh] min-w-5xl overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>
                         {type === 'purchase'
