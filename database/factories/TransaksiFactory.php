@@ -35,6 +35,9 @@ class TransaksiFactory extends Factory
             'sales_id' => $sales?->id,
             'unit_price' => $unitPrice,
             'total_price' => $totalPrice,
+            'date_transaction' => $this->faker
+                ->dateTimeBetween(now()->startOfYear(), now()->endOfYear())
+                ->format('Y-m-d'),
         ];
     }
 }

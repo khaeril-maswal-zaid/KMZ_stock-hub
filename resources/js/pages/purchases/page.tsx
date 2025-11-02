@@ -30,10 +30,17 @@ import type {
     Purchase,
     Salesman,
 } from '@/lib/types';
-import { dashboard } from '@/routes';
+import { pembelian } from '@/routes/transaction';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { Package, Plus, Trash2, TrendingUp } from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    Package,
+    Plus,
+    Trash2,
+    TrendingUp,
+} from 'lucide-react';
 import { useState } from 'react';
 
 interface initialData {
@@ -41,6 +48,9 @@ interface initialData {
     pembelians: PaginatedResponse<Purchase>;
     initialSalesmen: Salesman[];
     categories: Category[];
+    totalPembelian: String;
+    totalNilaiPembelian: String;
+    totalBarang: String;
 }
 
 export default function PurchasesPage({
@@ -48,16 +58,20 @@ export default function PurchasesPage({
     pembelians,
     initialSalesmen,
     categories,
+    totalPembelian,
+    totalNilaiPembelian,
+    totalBarang,
 }: initialData) {
     const purchases = pembelians.data;
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [open, setOpen] = useState(false);
     const [bulkOpen, setBulkOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const [deleteConfirm, setDeleteConfirm] = useState<{
         open: boolean;
-        id: string;
-    }>({ open: false, id: '' });
+        id: number;
+    }>({ open: false, id: 0 });
 
     const { toast } = useToast();
 
@@ -66,6 +80,7 @@ export default function PurchasesPage({
         quantity: number,
         salesman: string,
         unit_price: number,
+        date_transaction: Date,
     ) => {
         if (!barang_id || !quantity || !unit_price) {
             toast({
@@ -83,6 +98,7 @@ export default function PurchasesPage({
                 unit_price: unit_price,
                 type: 'Pembelian',
                 salesman,
+                date_transaction,
             };
 
             transaction(data);
@@ -111,6 +127,7 @@ export default function PurchasesPage({
                     unit_price: item.unitPrice,
                     salesman: item.salesId,
                     type: 'Pembelian',
+                    date_transaction: item.purchaseDate,
                 };
 
                 transaction(data);
@@ -131,7 +148,7 @@ export default function PurchasesPage({
         }
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = (id: number) => {
         setDeleteConfirm({ open: true, id });
     };
 
@@ -141,7 +158,7 @@ export default function PurchasesPage({
             title: 'Berhasil',
             description: 'Pembelian telah dihapus',
         });
-        setDeleteConfirm({ open: false, id: '' });
+        setDeleteConfirm({ open: false, id: 0 });
     };
 
     const getProductCategory = (barang_id: number) => {
@@ -150,11 +167,6 @@ export default function PurchasesPage({
             ''
         );
     };
-
-    const totalPurchaseValue = purchases.reduce(
-        (sum, p) => sum + p.total_price,
-        0,
-    );
 
     const filteredPurchases = purchases.filter((purchase) => {
         if (categoryFilter === 'all') return true;
@@ -165,14 +177,20 @@ export default function PurchasesPage({
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Dashboard',
-            href: dashboard().url,
+            title: 'Pembelian',
+            href: pembelian().url,
         },
     ];
 
+    const ITEMS_PER_PAGE = 20;
+    const totalPages = Math.ceil(filteredPurchases.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedProducts = filteredPurchases.slice(startIndex, endIndex);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboard" />
+            <Head title="Pembelian" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <div>
@@ -213,7 +231,7 @@ export default function PurchasesPage({
                                 </div>
                             </div>
                             <div className="text-3xl font-bold text-foreground">
-                                {purchases.length}
+                                {totalPembelian}
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
                                 Transaksi pembelian
@@ -234,7 +252,9 @@ export default function PurchasesPage({
                                 </div>
                             </div>
                             <div className="text-3xl font-bold text-foreground">
-                                Rp. {(totalPurchaseValue / 1000000).toFixed(1)}
+                                Rp.{' '}
+                                {(totalNilaiPembelian / 1_000_000).toFixed(1)}{' '}
+                                jt
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
                                 Nilai total
@@ -255,7 +275,7 @@ export default function PurchasesPage({
                                 </div>
                             </div>
                             <div className="text-3xl font-bold text-foreground">
-                                {products.length}
+                                {totalBarang}
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
                                 Produk
@@ -289,7 +309,10 @@ export default function PurchasesPage({
                                         Semua Kategori
                                     </SelectItem>
                                     {categories.map((cat) => (
-                                        <SelectItem key={cat.id} value={cat.id}>
+                                        <SelectItem
+                                            key={cat.id}
+                                            value={String(cat.id)}
+                                        >
                                             {cat.name}
                                         </SelectItem>
                                     ))}
@@ -330,12 +353,12 @@ export default function PurchasesPage({
                                             </TableCell>
                                         </TableRow>
                                     ) : (
-                                        filteredPurchases.map(
+                                        paginatedProducts.map(
                                             (purchase, index) => (
                                                 <TableRow key={index}>
                                                     <TableCell className="text-sm">
                                                         {formatDateIna(
-                                                            purchase.created_at,
+                                                            purchase.date_transaction,
                                                         )}
                                                     </TableCell>
                                                     <TableCell className="font-mono text-sm">
@@ -372,11 +395,11 @@ export default function PurchasesPage({
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            // onClick={() =>
-                                                            //     handleDelete(
-                                                            //         purchase.id,
-                                                            //     )
-                                                            // }
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    purchase.id,
+                                                                )
+                                                            }
                                                             className="text-destructive hover:text-destructive"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
@@ -389,6 +412,73 @@ export default function PurchasesPage({
                                 </TableBody>
                             </Table>
                         </div>
+                        {filteredPurchases.length > 0 && (
+                            <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+                                <div className="text-sm text-muted-foreground">
+                                    Menampilkan {startIndex + 1}-
+                                    {Math.min(
+                                        endIndex,
+                                        filteredPurchases.length,
+                                    )}{' '}
+                                    dari {filteredPurchases.length} barang
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            setCurrentPage(
+                                                Math.max(1, currentPage - 1),
+                                            )
+                                        }
+                                        disabled={currentPage === 1}
+                                        className="gap-2"
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                        Sebelumnya
+                                    </Button>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from(
+                                            { length: totalPages },
+                                            (_, i) => i + 1,
+                                        ).map((page) => (
+                                            <Button
+                                                key={page}
+                                                variant={
+                                                    currentPage === page
+                                                        ? 'default'
+                                                        : 'outline'
+                                                }
+                                                size="sm"
+                                                onClick={() =>
+                                                    setCurrentPage(page)
+                                                }
+                                                className="h-8 w-8 p-0"
+                                            >
+                                                {page}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            setCurrentPage(
+                                                Math.min(
+                                                    totalPages,
+                                                    currentPage + 1,
+                                                ),
+                                            )
+                                        }
+                                        disabled={currentPage === totalPages}
+                                        className="gap-2"
+                                    >
+                                        Selanjutnya
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -398,7 +488,7 @@ export default function PurchasesPage({
                         setDeleteConfirm({ ...deleteConfirm, open })
                     }
                     title="Hapus Pembelian"
-                    description="Apakah Anda yakin ingin menghapus pembelian ini? Stok barang akan dikembalikan."
+                    description="Apakah Anda yakin ingin menghapus pembelian ini? Stok barang tidak terpengaruh."
                     onConfirm={handleConfirmDelete}
                 />
 

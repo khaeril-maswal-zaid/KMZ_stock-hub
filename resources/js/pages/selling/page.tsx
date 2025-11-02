@@ -1,6 +1,7 @@
 'use client';
 
 import { BulkTransactionDialog } from '@/components/stockhub/bulk-transaction-dialog';
+import { DeleteConfirmDialog } from '@/components/stockhub/delete-confirm-dialog';
 import { TransactionDialog } from '@/components/stockhub/transaction-dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +22,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateIna } from '@/lib/date';
-import { transaction } from '@/lib/storage';
+import { deletePurchase, transaction } from '@/lib/storage';
 import type {
     Category,
     PaginatedResponse,
@@ -32,7 +33,15 @@ import type {
 import { dashboard } from '@/routes';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { Package, Plus, ShoppingCart, Trash2, TrendingUp } from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    Package,
+    Plus,
+    ShoppingCart,
+    Trash2,
+    TrendingUp,
+} from 'lucide-react';
 import { useState } from 'react';
 
 interface initialData {
@@ -40,6 +49,9 @@ interface initialData {
     penjualans: PaginatedResponse<Sale>;
     categories: Category[];
     initialSalesmen: Salesman[];
+    totalPenjualan: String;
+    totalNilaiPenjualan: String;
+    totalKeuntungan: String;
 }
 
 export default function SalesPage({
@@ -47,20 +59,28 @@ export default function SalesPage({
     penjualans,
     initialSalesmen,
     categories,
+    totalPenjualan,
+    totalNilaiPenjualan,
+    totalKeuntungan,
 }: initialData) {
     const sales = penjualans.data;
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [bulkOpen, setBulkOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const [deleteConfirm, setDeleteConfirm] = useState<{
         open: boolean;
-        id: string;
-    }>({ open: false, id: '' });
+        id: Number;
+    }>({ open: false, id: 0 });
 
     const { toast } = useToast();
 
-    const handleAddSale = (barang_id: string, quantity: number) => {
+    const handleAddSale = (
+        barang_id: string,
+        quantity: number,
+        purchaseDate: Date,
+    ) => {
         const product = products.find((p: any) => p.id === barang_id);
 
         if (!product) return;
@@ -80,6 +100,7 @@ export default function SalesPage({
                 quantity,
                 unit_price: product.price,
                 type: 'Penjualan',
+                date_transaction: purchaseDate,
             };
 
             transaction(data);
@@ -98,33 +119,6 @@ export default function SalesPage({
         }
     };
 
-    const handleDelete = (id: string) => {
-        setDeleteConfirm({ open: true, id });
-    };
-
-    const getProductCategory = (productId: number) => {
-        return (
-            products.find((p: any) => p.id === productId)?.kategori_barang_id ||
-            ''
-        );
-    };
-
-    const filteredSales = sales.filter((sale) => {
-        if (categoryFilter === 'all') return true;
-
-        const productCategory = getProductCategory(sale.barang_id);
-        return productCategory === categoryFilter;
-    });
-
-    const totalRevenue = sales.reduce((sum, s) => sum + s.total_price, 0);
-
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'Dashboard',
-            href: dashboard().url,
-        },
-    ];
-
     const handleBulkSale = (items: any[]) => {
         try {
             items.forEach((item) => {
@@ -141,6 +135,7 @@ export default function SalesPage({
                     quantity: item.quantity,
                     unit_price: item.unitPrice,
                     type: 'Penjualan',
+                    date_transaction: item.purchaseDate,
                 };
 
                 transaction(data);
@@ -163,6 +158,46 @@ export default function SalesPage({
             });
         }
     };
+
+    const handleDelete = (id: Number) => {
+        setDeleteConfirm({ open: true, id });
+    };
+
+    const handleConfirmDelete = () => {
+        deletePurchase(deleteConfirm.id);
+        toast({
+            title: 'Berhasil',
+            description: 'Pembelian telah dihapus',
+        });
+        setDeleteConfirm({ open: false, id: 0 });
+    };
+
+    const getProductCategory = (productId: number) => {
+        return (
+            products.find((p: any) => p.id === productId)?.kategori_barang_id ||
+            ''
+        );
+    };
+
+    const filteredSales = sales.filter((sale) => {
+        if (categoryFilter === 'all') return true;
+
+        const productCategory = getProductCategory(sale.barang_id);
+        return productCategory === categoryFilter;
+    });
+
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'Dashboard',
+            href: dashboard().url,
+        },
+    ];
+
+    const ITEMS_PER_PAGE = 20;
+    const totalPages = Math.ceil(filteredSales.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedProducts = filteredSales.slice(startIndex, endIndex);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -210,7 +245,7 @@ export default function SalesPage({
                                 </div>
                             </div>
                             <div className="text-3xl font-bold text-foreground">
-                                {sales.length}
+                                {totalPenjualan}
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
                                 Transaksi
@@ -224,14 +259,15 @@ export default function SalesPage({
                         <div className="p-6">
                             <div className="mb-4 flex items-center justify-between">
                                 <h3 className="text-sm font-medium text-muted-foreground">
-                                    Total Pendapatan
+                                    Total Nilai Penjualan
                                 </h3>
                                 <div className="rounded-lg bg-emerald-100 p-2 dark:bg-emerald-900/40">
                                     <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                                 </div>
                             </div>
                             <div className="text-3xl font-bold text-foreground">
-                                Rp {(totalRevenue / 1000000).toFixed(1)}M
+                                Rp{' '}
+                                {(totalNilaiPenjualan / 1_000_000).toFixed(1)}jt
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
                                 Dari penjualan
@@ -245,22 +281,14 @@ export default function SalesPage({
                         <div className="p-6">
                             <div className="mb-4 flex items-center justify-between">
                                 <h3 className="text-sm font-medium text-muted-foreground">
-                                    Rata-rata Transaksi
+                                    Total Pendapatan
                                 </h3>
                                 <div className="rounded-lg bg-lime-100 p-2 dark:bg-lime-900/40">
                                     <ShoppingCart className="h-5 w-5 text-lime-600 dark:text-lime-400" />
                                 </div>
                             </div>
                             <div className="text-3xl font-bold text-foreground">
-                                Rp{' '}
-                                {sales.length > 0
-                                    ? (
-                                          totalRevenue /
-                                          sales.length /
-                                          1000000
-                                      ).toFixed(1)
-                                    : 0}
-                                M
+                                Rp {(totalKeuntungan / 1_000_000).toFixed(1)}jt
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
                                 Per transaksi
@@ -293,14 +321,16 @@ export default function SalesPage({
                                         Semua Kategori
                                     </SelectItem>
                                     {categories.map((cat) => (
-                                        <SelectItem key={cat.id} value={cat.id}>
+                                        <SelectItem
+                                            key={cat.id}
+                                            value={String(cat.id)}
+                                        >
                                             {cat.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
-
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
@@ -324,7 +354,7 @@ export default function SalesPage({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredSales.length === 0 ? (
+                                    {paginatedProducts.length === 0 ? (
                                         <TableRow>
                                             <TableCell
                                                 colSpan={8}
@@ -335,11 +365,11 @@ export default function SalesPage({
                                             </TableCell>
                                         </TableRow>
                                     ) : (
-                                        filteredSales.map((purchase) => (
+                                        paginatedProducts.map((purchase) => (
                                             <TableRow key={purchase.id}>
                                                 <TableCell className="text-sm">
                                                     {formatDateIna(
-                                                        purchase.created_at,
+                                                        purchase.date_transaction,
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="font-mono text-sm">
@@ -376,11 +406,11 @@ export default function SalesPage({
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        // onClick={() =>
-                                                        //     handleDelete(
-                                                        //         purchase.id,
-                                                        //     )
-                                                        // }
+                                                        onClick={() =>
+                                                            handleDelete(
+                                                                purchase.id,
+                                                            )
+                                                        }
                                                         className="text-destructive hover:text-destructive"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
@@ -392,8 +422,82 @@ export default function SalesPage({
                                 </TableBody>
                             </Table>
                         </div>
+                        {filteredSales.length > 0 && (
+                            <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+                                <div className="text-sm text-muted-foreground">
+                                    Menampilkan {startIndex + 1}-
+                                    {Math.min(endIndex, filteredSales.length)}{' '}
+                                    dari {filteredSales.length} barang
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            setCurrentPage(
+                                                Math.max(1, currentPage - 1),
+                                            )
+                                        }
+                                        disabled={currentPage === 1}
+                                        className="gap-2"
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                        Sebelumnya
+                                    </Button>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from(
+                                            { length: totalPages },
+                                            (_, i) => i + 1,
+                                        ).map((page) => (
+                                            <Button
+                                                key={page}
+                                                variant={
+                                                    currentPage === page
+                                                        ? 'default'
+                                                        : 'outline'
+                                                }
+                                                size="sm"
+                                                onClick={() =>
+                                                    setCurrentPage(page)
+                                                }
+                                                className="h-8 w-8 p-0"
+                                            >
+                                                {page}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            setCurrentPage(
+                                                Math.min(
+                                                    totalPages,
+                                                    currentPage + 1,
+                                                ),
+                                            )
+                                        }
+                                        disabled={currentPage === totalPages}
+                                        className="gap-2"
+                                    >
+                                        Selanjutnya
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
+
+                <DeleteConfirmDialog
+                    open={deleteConfirm.open}
+                    onOpenChange={(open) =>
+                        setDeleteConfirm({ ...deleteConfirm, open })
+                    }
+                    title="Hapus Penjualan"
+                    description="Apakah Anda yakin ingin menghapus penjualan ini? Stok barang tidak terpengaruh."
+                    onConfirm={handleConfirmDelete}
+                />
 
                 <BulkTransactionDialog
                     open={bulkOpen}
@@ -412,9 +516,13 @@ export default function SalesPage({
                     products={products}
                     categories={categories}
                     type="sale"
-                    onSubmit={(productId, quantity) =>
-                        handleAddSale(productId, quantity)
-                    }
+                    onSubmit={(
+                        productId,
+                        quantity,
+                        _salesman,
+                        _unitPrice,
+                        purchaseDate,
+                    ) => handleAddSale(productId, quantity, purchaseDate)}
                 />
             </div>
         </AppLayout>

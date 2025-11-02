@@ -1,37 +1,49 @@
 'use client';
 
 import AppLayout from '@/layouts/app-layout';
-import { getProducts, getSales, getStatistics } from '@/lib/storage';
-import type { Product, Sale } from '@/lib/types';
 import { dashboard } from '@/routes';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import {
-    AlertCircle,
+    ArrowDownLeft,
+    ArrowUpRight,
     Boxes,
     Package,
     ShoppingCart,
     TrendingUp,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import {
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Cell,
+    LabelList,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from 'recharts';
 
-export default function Dashboard() {
-    const [stats, setStats] = useState({
-        totalProducts: 0,
-        totalStock: 0,
-        totalRevenue: 0,
-        totalSales: 0,
-    });
-    const [products, setProducts] = useState<Product[]>([]);
-    const [sales, setSales] = useState<Sale[]>([]);
-
-    useEffect(() => {
-        setStats(getStatistics());
-        setProducts(getProducts());
-        setSales(getSales());
-    }, []);
-
-    const lowStockProducts = products.filter((p) => p.quantity < 10);
+export default function Dashboard({
+    totalProducts,
+    totalStock,
+    thisYearSales,
+    thisYearPurchases,
+    categoryDistribution,
+    recentTransactions,
+}: any) {
+    const COLORS = [
+        '#3b82f6',
+        '#10b981',
+        '#f59e0b',
+        '#ef4444',
+        '#8b5cf6',
+        '#ec4899',
+        '#14b8a6',
+        '#f97316',
+        '#06b6d4',
+        '#84cc16',
+    ];
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -54,7 +66,6 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {/* Total Barang Card - Blue Gradient */}
                     <div className="transition-smooth relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-sm hover:shadow-md dark:from-blue-950/30 dark:to-blue-900/20">
                         <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-blue-500 to-blue-600"></div>
                         <div className="p-6">
@@ -67,7 +78,7 @@ export default function Dashboard() {
                                 </div>
                             </div>
                             <div className="text-3xl font-bold text-foreground">
-                                {stats.totalProducts}
+                                {totalProducts}
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
                                 Jenis produk
@@ -75,7 +86,6 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* Total Stok Card - Teal Gradient */}
                     <div className="transition-smooth relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-teal-50 to-teal-100/50 shadow-sm hover:shadow-md dark:from-teal-950/30 dark:to-teal-900/20">
                         <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-teal-500 to-teal-600"></div>
                         <div className="p-6">
@@ -88,7 +98,7 @@ export default function Dashboard() {
                                 </div>
                             </div>
                             <div className="text-3xl font-bold text-foreground">
-                                {stats.totalStock}
+                                {totalStock.toLocaleString('id-ID')}
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
                                 Unit tersedia
@@ -96,135 +106,181 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* Total Penjualan Card - Green Gradient */}
                     <div className="transition-smooth relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-green-50 to-green-100/50 shadow-sm hover:shadow-md dark:from-green-950/30 dark:to-green-900/20">
                         <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-green-500 to-green-600"></div>
                         <div className="p-6">
                             <div className="mb-4 flex items-center justify-between">
                                 <h3 className="text-sm font-medium text-muted-foreground">
-                                    Total Penjualan
+                                    Total Penjualan Tahun Ini
                                 </h3>
                                 <div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/40">
                                     <ShoppingCart className="h-5 w-5 text-green-600 dark:text-green-400" />
                                 </div>
                             </div>
                             <div className="text-3xl font-bold text-foreground">
-                                {stats.totalSales}
-                            </div>
-                            <p className="mt-2 text-xs text-muted-foreground">
-                                Transaksi
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Total Pendapatan Card - Amber Gradient */}
-                    <div className="transition-smooth relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-amber-50 to-amber-100/50 shadow-sm hover:shadow-md dark:from-amber-950/30 dark:to-amber-900/20">
-                        <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-amber-500 to-amber-600"></div>
-                        <div className="p-6">
-                            <div className="mb-4 flex items-center justify-between">
-                                <h3 className="text-sm font-medium text-muted-foreground">
-                                    Total Pendapatan
-                                </h3>
-                                <div className="rounded-lg bg-amber-100 p-2 dark:bg-amber-900/40">
-                                    <TrendingUp className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                                </div>
-                            </div>
-                            <div className="text-3xl font-bold text-foreground">
-                                Rp {(stats.totalRevenue / 1000000).toFixed(1)}M
+                                Rp {(thisYearSales / 1_000_000).toFixed(1)} jt
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
                                 Dari penjualan
                             </p>
                         </div>
                     </div>
-                </div>
 
-                {lowStockProducts.length > 0 && (
-                    <div className="relative overflow-hidden rounded-lg border border-red-200 bg-gradient-to-br from-red-50 to-red-100/50 shadow-sm dark:border-red-900/50 dark:from-red-950/30 dark:to-red-900/20">
-                        <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-red-500 to-red-600"></div>
+                    <div className="transition-smooth relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-amber-50 to-amber-100/50 shadow-sm hover:shadow-md dark:from-amber-950/30 dark:to-amber-900/20">
+                        <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-amber-500 to-amber-600"></div>
                         <div className="p-6">
-                            <div className="mb-4 flex items-center gap-3">
-                                <div className="rounded-lg bg-red-100 p-2 dark:bg-red-900/40">
-                                    <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                                </div>
-                                <div>
-                                    <h3 className="font-semibold text-red-900 dark:text-red-200">
-                                        Peringatan Stok Rendah
-                                    </h3>
-                                    <p className="text-sm text-red-700 dark:text-red-300">
-                                        Barang berikut memiliki stok kurang dari
-                                        10 unit
-                                    </p>
+                            <div className="mb-4 flex items-center justify-between">
+                                <h3 className="text-sm font-medium text-muted-foreground">
+                                    Total Pembelian Tahun Ini
+                                </h3>
+                                <div className="rounded-lg bg-amber-100 p-2 dark:bg-amber-900/40">
+                                    <TrendingUp className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                {lowStockProducts.map((product) => (
-                                    <div
-                                        key={product.id}
-                                        className="flex items-center justify-between rounded-lg border border-red-100 bg-white/50 p-3 dark:border-red-900/30 dark:bg-black/20"
-                                    >
-                                        <span className="font-medium text-foreground">
-                                            {product.name}
-                                        </span>
-                                        <span className="text-sm font-bold text-red-600 dark:text-red-400">
-                                            {product.quantity} {product.unit}
-                                        </span>
-                                    </div>
-                                ))}
+                            <div className="text-3xl font-bold text-foreground">
+                                Rp {(thisYearPurchases / 1_000_000).toFixed(1)}{' '}
+                                jt
                             </div>
+                            <p className="mt-2 text-xs text-muted-foreground">
+                                Dari pembelian
+                            </p>
                         </div>
                     </div>
-                )}
+                </div>
 
-                <div className="relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-slate-50 to-slate-100/50 shadow-sm dark:from-slate-950/30 dark:to-slate-900/20">
-                    <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-slate-400 to-slate-500"></div>
-                    <div className="p-6">
-                        <h3 className="mb-2 text-lg font-semibold text-foreground">
-                            Penjualan Terbaru
-                        </h3>
-                        <p className="mb-4 text-sm text-muted-foreground">
-                            5 transaksi penjualan terakhir
-                        </p>
-                        <div className="space-y-3">
-                            {sales
-                                .slice(-5)
-                                .reverse()
-                                .map((sale) => {
-                                    const product = products.find(
-                                        (p) => p.id === sale.productId,
-                                    );
-                                    return (
-                                        <div
-                                            key={sale.id}
-                                            className="transition-smooth flex items-center justify-between rounded-lg border border-border bg-white/50 p-3 hover:border-primary/50 dark:bg-black/20"
-                                        >
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    {/* Category Distribution */}
+                    <div className="relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-slate-50 to-slate-100/50 shadow-sm dark:from-slate-950/30 dark:to-slate-900/20">
+                        <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-emerald-500 to-emerald-600"></div>
+                        <div className="p-6">
+                            <h3 className="mb-4 text-lg font-semibold text-foreground">
+                                Distribusi Transaksi per Kategori
+                            </h3>
+                            <ResponsiveContainer width="100%" height={450}>
+                                <BarChart
+                                    data={categoryDistribution.sort(
+                                        (a, b) => b.count - a.count,
+                                    )} // urut dari besar ke kecil
+                                    layout="vertical"
+                                    margin={{
+                                        top: 10,
+                                        right: 15,
+                                        left: 15,
+                                        bottom: 10,
+                                    }}
+                                >
+                                    <CartesianGrid
+                                        strokeDasharray="3 3"
+                                        stroke="var(--border)"
+                                    />
+                                    <XAxis
+                                        type="number"
+                                        stroke="var(--muted-foreground)"
+                                        tickFormatter={(value) =>
+                                            value.toLocaleString('id-ID')
+                                        }
+                                    />
+                                    <YAxis
+                                        type="category"
+                                        dataKey="category"
+                                        stroke="var(--muted-foreground)"
+                                        width={100}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{
+                                            backgroundColor:
+                                                'var(--background)',
+                                            border: '1px solid var(--border)',
+                                        }}
+                                        formatter={(value: number) => [
+                                            `${value.toLocaleString('id-ID')}`,
+                                            'Jumlah Barang',
+                                        ]}
+                                    />
+                                    <Bar
+                                        dataKey="count"
+                                        radius={[4, 4, 4, 4]}
+                                        barSize={18}
+                                    >
+                                        {categoryDistribution.map(
+                                            (entry, index) => (
+                                                <Cell
+                                                    key={`cell-${index}`}
+                                                    fill={
+                                                        COLORS[
+                                                            index %
+                                                                COLORS.length
+                                                        ]
+                                                    }
+                                                />
+                                            ),
+                                        )}
+                                        <LabelList
+                                            dataKey="count"
+                                            position="right"
+                                            fill="var(--foreground)"
+                                            fontSize={12}
+                                        />
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Recent Transactions */}
+                    <div className="relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-slate-50 to-slate-100/50 shadow-sm dark:from-slate-950/30 dark:to-slate-900/20">
+                        <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-cyan-500 to-cyan-600"></div>
+                        <div className="p-6">
+                            <h3 className="mb-4 text-lg font-semibold text-foreground">
+                                Transaksi Terbaru (10)
+                            </h3>
+                            <div className="max-h-100 space-y-3 overflow-y-auto">
+                                {recentTransactions.map((tx) => (
+                                    <div
+                                        key={`${tx.type}-${tx.id}`}
+                                        className="transition-smooth flex items-center justify-between rounded-lg border border-border bg-white/50 p-3 hover:border-primary/50 dark:bg-black/20"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className={`rounded-lg p-2 ${tx.type === 'Penjualan' ? 'bg-green-100 dark:bg-green-900/40' : 'bg-amber-100 dark:bg-amber-900/40'}`}
+                                            >
+                                                {tx.type === 'Penjualan' ? (
+                                                    <ArrowDownLeft
+                                                        className={`h-4 w-4 ${tx.type === 'Penjualan' ? 'text-green-600 dark:text-green-400' : ''}`}
+                                                    />
+                                                ) : (
+                                                    <ArrowUpRight
+                                                        className={`h-4 w-4 text-amber-600 dark:text-amber-400`}
+                                                    />
+                                                )}
+                                            </div>
                                             <div>
                                                 <p className="font-medium text-foreground">
-                                                    {product?.name}
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {sale.quantity}{' '}
-                                                    {product?.unit}
-                                                </p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-bold text-foreground">
-                                                    Rp{' '}
-                                                    {sale.totalPrice.toLocaleString(
-                                                        'id-ID',
-                                                    )}
+                                                    {tx.barang?.name}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {new Date(
-                                                        sale.saleDate,
-                                                    ).toLocaleDateString(
-                                                        'id-ID',
-                                                    )}
+                                                    {tx.type === 'Penjualan'
+                                                        ? 'Penjualan'
+                                                        : 'Pembelian'}
                                                 </p>
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                        <div className="text-right">
+                                            <p className="font-bold text-foreground">
+                                                Rp{' '}
+                                                {tx.total_price.toLocaleString(
+                                                    'id-ID',
+                                                )}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {new Date(
+                                                    tx.date_transaction,
+                                                ).toLocaleDateString('id-ID')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>

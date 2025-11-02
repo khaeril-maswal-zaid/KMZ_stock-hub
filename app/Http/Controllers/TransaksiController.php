@@ -18,17 +18,32 @@ class TransaksiController extends Controller
      */
     public function pembelian(): Response
     {
+        // Total Barang (jumlah item unik)
+        $totalPembelian = Transaksi::where('type', 'Pembelian')->count();
+
+        // Total Pembelian Tahun Ini
+        $totalNilaiPembelian = Transaksi::where('type', 'Pembelian')
+            ->sum('total_price');
+
+        // Total Stok (akumulasi semua quantity barang)
+        $totalBarang = Barang::count();
+
         $data = [
             'categories' => KategoriBarang::select(['id', 'name'])->orderBy('name', 'asc')->get(),
             'initialSalesmen' => Sales::select('id', 'name')->orderBy('name', 'asc')->get(),
             'products' => Barang::select(['id', 'code', 'name', 'kategori_barang_id', 'quantity', 'unit'])->with('category:id,name')->get(),
-            'pembelians' => Transaksi::select(['quantity', 'barang_id', 'unit_price', 'total_price', 'created_at'])
+            'pembelians' => Transaksi::select(['id', 'quantity', 'barang_id', 'unit_price', 'total_price', 'date_transaction'])
                 ->with([
                     'barang:id,name,code,kategori_barang_id',
                     'barang.category:id,name'
                 ])
                 ->where('type', 'Pembelian')
-                ->paginate(1000),
+                ->latest()
+                ->paginate(100),
+
+            'totalPembelian' => $totalPembelian,
+            'totalNilaiPembelian' => $totalNilaiPembelian,
+            'totalBarang' => $totalBarang,
         ];
 
         return Inertia::render('purchases/page', $data);
@@ -36,16 +51,32 @@ class TransaksiController extends Controller
 
     public function penjualan(): Response
     {
+        // Total Barang (jumlah item unik)
+        $totalPenjualan = Transaksi::where('type', 'Penjualan')->count();
+
+        $totalNilaiPenjualan = Transaksi::where('type', 'Penjualan')
+            ->sum('total_price');
+
+        // Total Pembelian Tahun Ini
+        $totalNilaiPembelian = Transaksi::where('type', 'Pembelian')
+            ->sum('total_price');
+
+
         $data = [
             'categories' => KategoriBarang::select(['id', 'name'])->orderBy('name', 'asc')->get(),
             'products' => Barang::select(['id', 'code', 'name', 'kategori_barang_id', 'quantity', 'price', 'unit'])->with('category:id,name')->get(),
-            'penjualans' => Transaksi::select(['quantity', 'barang_id', 'unit_price', 'total_price', 'created_at'])
+            'penjualans' => Transaksi::select(['id', 'quantity', 'barang_id', 'unit_price', 'total_price', 'date_transaction'])
                 ->with([
                     'barang:id,name,code,kategori_barang_id',
                     'barang.category:id,name'
                 ])
                 ->where('type', 'Penjualan')
-                ->paginate(1000),
+                ->latest()
+                ->paginate(100),
+
+            'totalPenjualan' => $totalPenjualan,
+            'totalNilaiPenjualan' => $totalNilaiPenjualan,
+            'totalKeuntungan' => $totalNilaiPenjualan - $totalNilaiPembelian,
         ];
 
         return Inertia::render('selling/page', $data);
@@ -76,15 +107,14 @@ class TransaksiController extends Controller
             'quantity' => $newQuantity
         ]);
 
-        $barang->id;
-
         Transaksi::create([
             'barang_id' => $barang->id,
             'sales_id' => $request->salesman,
             'quantity' => $request->quantity,
             'unit_price' => $request->unit_price,
             'total_price' => $request->quantity * $request->unit_price,
-            'type' => $request->type
+            'type' => $request->type,
+            'date_transaction' => date('Y-m-d H:i:s', strtotime($request->date_transaction)),
         ]);
     }
 
@@ -115,8 +145,8 @@ class TransaksiController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Transaksi $Transaksi)
+    public function destroy(Transaksi $transaksi)
     {
-        $Transaksi->delete();
+        $transaksi->delete();
     }
 }

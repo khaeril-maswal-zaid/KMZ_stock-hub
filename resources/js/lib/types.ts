@@ -51,7 +51,7 @@ export interface Purchase {
     quantity: number;
     unit_price: number;
     total_price: number;
-    created_at: string;
+    date_transaction: string;
 }
 
 export interface Sale {
@@ -61,7 +61,7 @@ export interface Sale {
     quantity: number;
     unit_price: number;
     total_price: number;
-    created_at: string;
+    date_transaction: string;
 }
 
 export interface StockHistory {

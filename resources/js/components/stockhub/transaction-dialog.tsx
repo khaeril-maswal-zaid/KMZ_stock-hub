@@ -2,7 +2,6 @@
 
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
-('use client');
 
 import {
     Dialog,
@@ -21,6 +20,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import type { Category, Product, Salesman } from '@/lib/types';
+import { Calendar, Clock } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 
@@ -38,6 +38,7 @@ interface TransactionDialogProps {
         quantity: number,
         salesman: string,
         unit_price: number,
+        purchaseDate: Date,
     ) => void;
 }
 
@@ -56,6 +57,8 @@ export function TransactionDialog({
     const [salesman, setSalesman] = useState('');
     const [openCombobox, setOpenCombobox] = useState(false);
     const [searchValue, setSearchValue] = useState('');
+    const [isToday, setIsToday] = useState(true);
+    const [customDate, setCustomDate] = useState('');
 
     useEffect(() => {
         if (!open) {
@@ -66,6 +69,8 @@ export function TransactionDialog({
             setSearchValue('');
         }
     }, [open]);
+
+    const purchaseDate = new Date(isToday ? Date.now() : customDate);
 
     const selectedProduct = products.find((p) => p.id === selectedProductId);
 
@@ -87,14 +92,12 @@ export function TransactionDialog({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (selectedProductId && quantity) {
-            const price =
-                type === 'purchase' ? Number.parseFloat(unitPrice) : undefined;
-
             onSubmit(
                 selectedProductId,
                 Number(quantity),
                 salesman,
                 Number(unitPrice),
+                purchaseDate,
             );
             setSelectedProductId('');
             setQuantity('');
@@ -143,7 +146,7 @@ export function TransactionDialog({
                                 <SelectTrigger id="salesman">
                                     <SelectValue placeholder="Pilih sales" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="bg-white">
                                     <SelectItem value="none">
                                         Tidak ada
                                     </SelectItem>
@@ -257,7 +260,7 @@ export function TransactionDialog({
                                     </Label>
                                     <Input
                                         id="unitPrice"
-                                        type="number"
+                                        type=""
                                         placeholder="0"
                                         value={unitPrice}
                                         onChange={(e) =>
@@ -324,6 +327,102 @@ export function TransactionDialog({
                             )}
                         </>
                     )}
+
+                    {/* Date Picker Section */}
+                    <div className="space-y-3 border-t pt-2">
+                        <Label className="text-sm font-medium">
+                            Tanggal{' '}
+                            {type === 'purchase' ? 'Pembelian' : 'Penjualan'} :
+                        </Label>
+
+                        {/* Date Options - Horizontal */}
+                        <div className="mt-0.5 flex gap-2">
+                            {/* Today Option */}
+                            <button
+                                onClick={() => {
+                                    setIsToday(true);
+                                    setCustomDate('');
+                                }}
+                                type="button"
+                                className={`flex w-1/2 cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-3 transition-all ${
+                                    isToday
+                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
+                                        : 'border-border bg-muted/30 hover:bg-muted/50'
+                                }`}
+                            >
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-white">
+                                    <Clock className="h-3.5 w-3.5" />
+                                </div>
+                                <div className="flex-1 text-left">
+                                    <div className="text-sm font-medium">
+                                        Hari ini
+                                    </div>
+                                    <div className="truncate text-xs text-muted-foreground">
+                                        {new Date().toLocaleDateString(
+                                            'id-ID',
+                                            {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            },
+                                        )}
+                                    </div>
+                                </div>
+                                {isToday && (
+                                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                                )}
+                            </button>
+
+                            {/* Custom Date Option */}
+                            <button
+                                onClick={() => setIsToday(false)}
+                                type="button"
+                                className={`flex w-1/2 cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-3 transition-all ${
+                                    !isToday
+                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
+                                        : 'border-border bg-muted/30 hover:bg-muted/50'
+                                }`}
+                            >
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-300 text-white dark:bg-slate-600">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                </div>
+                                <div className="flex-1 text-left">
+                                    <div className="text-sm font-medium">
+                                        Tanggal Lain
+                                    </div>
+                                    <div className="truncate text-xs text-muted-foreground">
+                                        {customDate
+                                            ? new Date(
+                                                  customDate,
+                                              ).toLocaleDateString('id-ID', {
+                                                  year: 'numeric',
+                                                  month: 'short',
+                                                  day: 'numeric',
+                                              })
+                                            : 'Pilih tanggal'}
+                                    </div>
+                                </div>
+                                {!isToday && (
+                                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                                )}
+                            </button>
+                        </div>
+
+                        {/* Date Input - shown when custom date selected */}
+                        {!isToday && (
+                            <div className="mt-3 animate-in fade-in slide-in-from-top-2">
+                                <Input
+                                    type="date"
+                                    value={customDate}
+                                    onChange={(e) =>
+                                        setCustomDate(e.target.value)
+                                    }
+                                    className="w-full"
+                                />
+                            </div>
+                        )}
+                    </div>
 
                     <div className="flex gap-3 pt-4">
                         <Button

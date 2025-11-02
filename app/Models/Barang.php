@@ -30,10 +30,11 @@ class Barang extends Model
     {
         static::creating(function ($barang) {
             do {
-                $randomCode = 'PG-' . strtoupper(Str::random(2)) . '-' . rand(10, 99);
-            } while (self::where('code', $randomCode)->exists());
+                $random = strtoupper(Str::random(5)); // 5 huruf/angka acak
+                $code = 'BR-' . $random;
+            } while (self::where('code', $code)->exists());
 
-            $barang->code = $randomCode;
+            $barang->code = $code;
         });
     }
 }

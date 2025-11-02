@@ -10,6 +10,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -27,8 +28,8 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import type { Category, Product, Salesman } from '@/lib/types';
-import { Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { Calendar, Clock, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface BulkItem {
     id: string;
@@ -36,6 +37,7 @@ interface BulkItem {
     salesId: string;
     quantity: number;
     unitPrice: number;
+    purchaseDate: Date;
 }
 
 interface BulkTransactionDialogProps {
@@ -66,16 +68,32 @@ export function BulkTransactionDialog({
         Record<string, boolean>
     >({});
 
+    const [isToday, setIsToday] = useState(true);
+    const [customDate, setCustomDate] = useState('');
+
     const handleAddItem = () => {
+        const currentDate = new Date(isToday ? Date.now() : customDate);
+
         const newItem: BulkItem = {
             id: Date.now().toString(),
             productId: 0,
             quantity: 1,
             unitPrice: 0,
             salesId: '',
+            purchaseDate: currentDate,
         };
-        setItems([...items, newItem]);
+        setItems((prev) => [...prev, newItem]);
     };
+
+    useEffect(() => {
+        const newDate = new Date(isToday ? Date.now() : customDate);
+        setItems((prev) =>
+            prev.map((item) => ({
+                ...item,
+                purchaseDate: newDate,
+            })),
+        );
+    }, [isToday, customDate]);
 
     const handleRemoveItem = (id: string) => {
         setItems(items.filter((item) => item.id !== id));
@@ -481,6 +499,99 @@ export function BulkTransactionDialog({
                         <Plus className="h-4 w-4" />
                         Tambah Item
                     </Button>
+
+                    {/* Date Picker Section */}
+                    <div className="space-y-3 border-t pt-2">
+                        <Label className="text-sm font-medium">
+                            Tanggal Pembelian :
+                        </Label>
+
+                        {/* Date Options - Horizontal */}
+                        <div className="mt-0.5 flex gap-2">
+                            {/* Today Option */}
+                            <button
+                                onClick={() => {
+                                    setIsToday(true);
+                                    setCustomDate('');
+                                }}
+                                className={`flex w-1/2 cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-3 transition-all ${
+                                    isToday
+                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
+                                        : 'border-border bg-muted/30 hover:bg-muted/50'
+                                }`}
+                            >
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-white">
+                                    <Clock className="h-3.5 w-3.5" />
+                                </div>
+                                <div className="flex-1 text-left">
+                                    <div className="text-sm font-medium">
+                                        Hari ini
+                                    </div>
+                                    <div className="truncate text-xs text-muted-foreground">
+                                        {new Date().toLocaleDateString(
+                                            'id-ID',
+                                            {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            },
+                                        )}
+                                    </div>
+                                </div>
+                                {isToday && (
+                                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                                )}
+                            </button>
+
+                            {/* Custom Date Option */}
+                            <button
+                                onClick={() => setIsToday(false)}
+                                className={`flex w-1/2 cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-3 transition-all ${
+                                    !isToday
+                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
+                                        : 'border-border bg-muted/30 hover:bg-muted/50'
+                                }`}
+                            >
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-300 text-white dark:bg-slate-600">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                </div>
+                                <div className="flex-1 text-left">
+                                    <div className="text-sm font-medium">
+                                        Tanggal Lain
+                                    </div>
+                                    <div className="truncate text-xs text-muted-foreground">
+                                        {customDate
+                                            ? new Date(
+                                                  customDate,
+                                              ).toLocaleDateString('id-ID', {
+                                                  year: 'numeric',
+                                                  month: 'short',
+                                                  day: 'numeric',
+                                              })
+                                            : 'Pilih tanggal'}
+                                    </div>
+                                </div>
+                                {!isToday && (
+                                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                                )}
+                            </button>
+                        </div>
+
+                        {/* Date Input - shown when custom date selected */}
+                        {!isToday && (
+                            <div className="mt-3 animate-in fade-in slide-in-from-top-2">
+                                <Input
+                                    type="date"
+                                    value={customDate}
+                                    onChange={(e) =>
+                                        setCustomDate(e.target.value)
+                                    }
+                                    className="w-full"
+                                />
+                            </div>
+                        )}
+                    </div>
 
                     {/* Summary */}
                     {items.length > 0 && (

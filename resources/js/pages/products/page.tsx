@@ -22,7 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { deleteProduct } from '@/lib/storage';
 import type { Category, Product } from '@/lib/types';
-import { dashboard } from '@/routes';
+import { index } from '@/routes/categorie';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import {
@@ -51,23 +51,23 @@ export default function ProductsPage({ products, categories }: initialData) {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<{
         open: boolean;
-        id: string;
+        code: string;
     }>({ open: false, id: '' });
     const [currentPage, setCurrentPage] = useState(1);
     const { toast } = useToast();
 
-    const handleDelete = (id: string) => {
-        setDeleteConfirm({ open: true, id });
+    const handleDelete = (code: string) => {
+        setDeleteConfirm({ open: true, code });
     };
 
     const handleConfirmDelete = () => {
-        deleteProduct(deleteConfirm.id);
+        deleteProduct(deleteConfirm.code);
 
         toast({
             title: 'Berhasil',
             description: 'Barang telah dihapus',
         });
-        setDeleteConfirm({ open: false, id: '' });
+        setDeleteConfirm({ open: false, code: '' });
     };
 
     const handleEdit = (product: Product) => {
@@ -96,12 +96,12 @@ export default function ProductsPage({ products, categories }: initialData) {
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Dashboard',
-            href: dashboard().url,
+            title: 'Barang',
+            href: index().url,
         },
     ];
 
-    const ITEMS_PER_PAGE = 5;
+    const ITEMS_PER_PAGE = 20;
     const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
@@ -109,7 +109,7 @@ export default function ProductsPage({ products, categories }: initialData) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboard" />
+            <Head title={'Barang'} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
@@ -260,11 +260,11 @@ export default function ProductsPage({ products, categories }: initialData) {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        // onClick={() =>
-                                                        //     handleDelete(
-                                                        //         product.id,
-                                                        //     )
-                                                        // }
+                                                        onClick={() =>
+                                                            handleDelete(
+                                                                product.code,
+                                                            )
+                                                        }
                                                         className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                                                     >
                                                         <Trash2 className="h-4 w-4" />

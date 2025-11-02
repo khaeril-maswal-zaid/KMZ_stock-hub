@@ -11,7 +11,7 @@ class UpdateBarangRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,24 @@ class UpdateBarangRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            // 'code' => ['required', 'string', 'max:50', 'unique:barangs,code'],
+            'name' => ['required', 'string', 'max:255'],
+            'kategori_barang_id' => ['required', 'exists:kategori_barangs,id'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'unit' => ['required', 'string', 'max:50'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            // 'code.required' => 'Kode produk wajib diisi.',
+            // 'code.unique' => 'Kode produk sudah digunakan.',
+            'name.required' => 'Nama produk wajib diisi.',
+            'kategori_barang_id.required' => 'Kategori produk wajib diisi.',
+            'kategori_barang_id.exists' => 'Kategori tidak ditemukan.',
+            'price.numeric' => 'Harga harus berupa angka.',
+            'unit.required' => 'Satuan produk wajib diisi.',
         ];
     }
 }

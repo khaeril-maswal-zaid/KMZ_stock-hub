@@ -7,7 +7,11 @@ import type {
     StockHistory,
 } from '@/lib/types';
 
-import { store as storeProduct } from '@/routes/product';
+import {
+    destroy as dltProduct,
+    store as storeProduct,
+    update as udtProduct,
+} from '@/routes/product';
 
 import {
     destroy as destroyKriteria,
@@ -21,7 +25,10 @@ import {
     update as uptSalesman,
 } from '@/routes/salesmen';
 
-import { store as storeTransaction } from '@/routes/transaction';
+import {
+    destroy as dltTransaksi,
+    store as storeTransaction,
+} from '@/routes/transaction';
 import { router } from '@inertiajs/react';
 
 const STORAGE_KEYS = {
@@ -91,24 +98,26 @@ export function addProduct(product: any) {
     });
 }
 
-export function updateProduct(
-    id: string,
-    updates: Partial<Product>,
-): Product | null {
-    const products = getProducts();
-    const index = products.findIndex((p) => p.id === id);
-    if (index === -1) return null;
-    products[index] = { ...products[index], ...updates, updatedAt: new Date() };
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
-    return products[index];
+export function updateProduct(code: string, updates: Product) {
+    router.put(udtProduct(code).url, updates, {
+        onSuccess: () => {
+            // Optionally handle success
+        },
+        onError: (err) => {
+            console.log(err);
+        },
+    });
 }
 
-export function deleteProduct(id: string): boolean {
-    const products = getProducts();
-    const filtered = products.filter((p) => p.id !== id);
-    if (filtered.length === products.length) return false;
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(filtered));
-    return true;
+export function deleteProduct(code: string) {
+    router.delete(dltProduct(code).url, {
+        onSuccess: () => {
+            // Optionally handle success
+        },
+        onError: (err) => {
+            console.log(err);
+        },
+    });
 }
 
 // Sales
@@ -223,34 +232,192 @@ export function addPurchase(purchase: any) {
     });
 }
 
-export function deletePurchase(id: string): boolean {
-    const purchases = getPurchases();
-    const purchase = purchases.find((p) => p.id === id);
-
-    if (!purchase) return false;
-
-    // Revert product quantity
-    const product = getProducts().find((p) => p.id === purchase.productId);
-    if (product) {
-        updateProduct(purchase.productId, {
-            quantity: Math.max(0, product.quantity - purchase.quantity),
-        });
-    }
-
-    const filtered = purchases.filter((p) => p.id !== id);
-    localStorage.setItem(STORAGE_KEYS.PURCHASES, JSON.stringify(filtered));
-    return true;
+export function deletePurchase(id: Number) {
+    router.delete(dltTransaksi(id).url, {
+        onSuccess: () => {
+            // Optionally handle success
+        },
+        onError: (err) => {
+            console.log(err);
+        },
+    });
 }
 
-// Statistics
-export function getStatistics() {
-    const products = getProducts();
+export function getSalesThisMonth(): Sale[] {
     const sales = getSales();
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    return sales.filter((s) => new Date(s.saleDate) >= startOfMonth);
+}
 
-    const totalProducts = products.length;
-    const totalStock = products.reduce((sum, p) => sum + p.quantity, 0);
-    const totalRevenue = sales.reduce((sum, s) => sum + s.totalPrice, 0);
-    const totalSales = sales.length;
+export function getPurchasesThisMonth(): Purchase[] {
+    const purchases = getPurchases();
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    return purchases.filter((p) => new Date(p.purchaseDate) >= startOfMonth);
+}
 
-    return { totalProducts, totalStock, totalRevenue, totalSales };
+export function getSalesPerMonth(): {
+    month: string;
+    sales: number;
+    purchases: number;
+}[] {
+    const sales = getSales();
+    const purchases = getPurchases();
+    const monthMap = new Map<string, { sales: number; purchases: number }>();
+
+    // Process sales
+    sales.forEach((s) => {
+        const date = new Date(s.saleDate);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const current = monthMap.get(key) || { sales: 0, purchases: 0 };
+        monthMap.set(key, { ...current, sales: current.sales + s.totalPrice });
+    });
+
+    // Process purchases
+    purchases.forEach((p) => {
+        const date = new Date(p.purchaseDate);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const current = monthMap.get(key) || { sales: 0, purchases: 0 };
+        monthMap.set(key, {
+            ...current,
+            purchases: current.purchases + p.totalPrice,
+        });
+    });
+
+    // Convert to array and sort by month
+    const sorted = Array.from(monthMap.entries())
+        .sort()
+        .slice(-6)
+        .map(([key, value]) => {
+            const [year, month] = key.split('-');
+            const monthNames = [
+                'Jan',
+                'Feb',
+                'Mar',
+                'Apr',
+                'May',
+                'Jun',
+                'Jul',
+                'Aug',
+                'Sep',
+                'Oct',
+                'Nov',
+                'Dec',
+            ];
+            return {
+                month: monthNames[Number.parseInt(month) - 1],
+                ...value,
+            };
+        });
+
+    return sorted;
+}
+
+export function getTopProductsByQuantity(): {
+    productId: string;
+    productName: string;
+    quantity: number;
+}[] {
+    const history = getStockHistory();
+    const products = getProducts();
+    const outMap = new Map<string, number>();
+
+    history
+        .filter((h) => h.type === 'OUT')
+        .forEach((h) => {
+            outMap.set(
+                h.productId,
+                (outMap.get(h.productId) || 0) + h.quantity,
+            );
+        });
+
+    return Array.from(outMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([productId, quantity]) => {
+            const product = products.find((p) => p.id === productId);
+            return {
+                productId,
+                productName: product?.name || 'Unknown',
+                quantity,
+            };
+        });
+}
+
+export function getTransactionsByCategory(): {
+    category: string;
+    count: number;
+}[] {
+    const sales = getSales();
+    const purchases = getPurchases();
+    const products = getProducts();
+    const categories = getCategories();
+    const categoryMap = new Map<string, number>();
+
+    // Count sales
+    sales.forEach((s) => {
+        const product = products.find((p) => p.id === s.productId);
+        if (product) {
+            const category = categories.find(
+                (c) => c.id === product.categoryId,
+            );
+            if (category) {
+                categoryMap.set(
+                    category.name,
+                    (categoryMap.get(category.name) || 0) + 1,
+                );
+            }
+        }
+    });
+
+    // Count purchases
+    purchases.forEach((p) => {
+        const product = products.find((pr) => pr.id === p.productId);
+        if (product) {
+            const category = categories.find(
+                (c) => c.id === product.categoryId,
+            );
+            if (category) {
+                categoryMap.set(
+                    category.name,
+                    (categoryMap.get(category.name) || 0) + 1,
+                );
+            }
+        }
+    });
+
+    return Array.from(categoryMap.entries())
+        .map(([category, count]) => ({ category, count }))
+        .sort((a, b) => b.count - a.count);
+}
+
+export function getAllTransactions(): (
+    | (Sale & { type: 'SALE'; productName: string })
+    | (Purchase & { type: 'PURCHASE'; productName: string })
+)[] {
+    const sales = getSales();
+    const purchases = getPurchases();
+    const products = getProducts();
+
+    const allTransactions = [
+        ...sales.map((s) => ({
+            ...s,
+            type: 'SALE' as const,
+            productName:
+                products.find((p) => p.id === s.productId)?.name || 'Unknown',
+        })),
+        ...purchases.map((p) => ({
+            ...p,
+            type: 'PURCHASE' as const,
+            productName:
+                products.find((pr) => pr.id === p.productId)?.name || 'Unknown',
+        })),
+    ];
+
+    return allTransactions.sort((a, b) => {
+        const dateA = new Date(a.type === 'SALE' ? a.saleDate : a.purchaseDate);
+        const dateB = new Date(b.type === 'SALE' ? b.saleDate : b.purchaseDate);
+        return dateB.getTime() - dateA.getTime();
+    });
 }

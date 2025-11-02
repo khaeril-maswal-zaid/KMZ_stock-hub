@@ -18,15 +18,15 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         KategoriBarang::factory(10)->create();
-        Sales::factory(10)->create();
-        Barang::factory(5)->create();
-        Transaksi::factory(10)->create();
+        Sales::factory(100)->create();
+        Barang::factory(100)->create();
+        Transaksi::factory(100)->create();
 
         User::firstOrCreate(
-            ['email' => 'test@example.com'],
+            ['email' => 'administrator@cherish.co.id'],
             [
-                'name' => 'Test User',
-                'password' => 'password',
+                'name' => 'Administrator',
+                'password' => '4dm1n77$',
                 'email_verified_at' => now(),
             ]
         );

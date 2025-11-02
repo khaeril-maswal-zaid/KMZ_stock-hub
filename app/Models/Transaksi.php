@@ -17,11 +17,17 @@ class Transaksi extends Model
         'unit_price',
         'total_price',
         'type',
-        'sales_id'
+        'sales_id',
+        'date_transaction',
     ];
 
     public function barang(): BelongsTo
     {
         return $this->belongsTo(Barang::class, 'barang_id');
+    }
+
+    public function sales(): BelongsTo
+    {
+        return $this->belongsTo(Sales::class, 'sales_id');
     }
 }
