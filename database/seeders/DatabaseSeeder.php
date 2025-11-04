@@ -17,10 +17,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        KategoriBarang::factory(10)->create();
-        Sales::factory(100)->create();
-        Barang::factory(100)->create();
-        Transaksi::factory(100)->create();
+        // KategoriBarang::factory(10)->create();
+        // Sales::factory(100)->create();
+        // Barang::factory(100)->create();
+        // Transaksi::factory(100)->create();
 
         User::firstOrCreate(
             ['email' => 'administrator@cherish.co.id'],
