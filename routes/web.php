@@ -25,25 +25,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard/reports', [MorePagesController::class, 'laporan'])->name('report');
 
     Route::get('dashboard/products', [BarangController::class, 'index'])->name('product.index');
-    Route::post('dashboardproducts/store', [BarangController::class, 'store'])->name('product.store');
-    Route::put('dashboard/products/update/{barang:code}', [BarangController::class, 'update'])->name('product.update');
-    Route::delete('dashboard/products/destroy/{barang:code}', [BarangController::class, 'destroy'])->name('product.destroy');
+    // Route::post('dashboardproducts/store', [BarangController::class, 'store'])->name('product.store');
+    // Route::put('dashboard/products/update/{barang:code}', [BarangController::class, 'update'])->name('product.update');
+    // Route::delete('dashboard/products/destroy/{barang:code}', [BarangController::class, 'destroy'])->name('product.destroy');
 
     Route::get('dashboard/purchases', [TransaksiController::class, 'pembelian'])->name('transaction.pembelian');
-    Route::get('dashboard/sellings', [TransaksiController::class, 'penjualan'])->name('transaction.penjualan');
-    Route::post('dashboard/transactions/store', [TransaksiController::class, 'store'])->name('transaction.store');
-    Route::delete('dashboard/transactions/destroy{transaksi}', [TransaksiController::class, 'destroy'])->name('transaction.destroy');
+    // Route::get('dashboard/sellings', [TransaksiController::class, 'penjualan'])->name('transaction.penjualan');
+    // Route::post('dashboard/transactions/store', [TransaksiController::class, 'store'])->name('transaction.store');
+    // Route::delete('dashboard/transactions/destroy{transaksi}', [TransaksiController::class, 'destroy'])->name('transaction.destroy');
 
 
     Route::get('dashboard/salesmens', [SalesController::class, 'index'])->name('salesmen.index');
-    Route::post('dashboardsalesmens/store', [SalesController::class, 'store'])->name('salesmen.store');
-    Route::put('dashboard/salesmens/update/{sales:id}', [SalesController::class, 'update'])->name('salesmen.update');
-    Route::delete('dashboard/salesmens/delete/{sales:id}', [SalesController::class, 'destroy'])->name('salesmen.destroy');
+    // Route::post('dashboardsalesmens/store', [SalesController::class, 'store'])->name('salesmen.store');
+    // Route::put('dashboard/salesmens/update/{sales:id}', [SalesController::class, 'update'])->name('salesmen.update');
+    // Route::delete('dashboard/salesmens/delete/{sales:id}', [SalesController::class, 'destroy'])->name('salesmen.destroy');
 
     Route::get('dashboard/categories', [KategoriBarangController::class, 'index'])->name('categorie.index');
-    Route::post('dashboard/categories/store', [KategoriBarangController::class, 'store'])->name('categorie.store');
-    Route::put('dashboard/categories/update/{kategoriBarang:id}', [KategoriBarangController::class, 'update'])->name('categorie.update');
-    Route::delete('dashboard/categories/{kategoriBarang:id}', [KategoriBarangController::class, 'destroy'])->name('categorie.destroy');
+    // Route::post('dashboard/categories/store', [KategoriBarangController::class, 'store'])->name('categorie.store');
+    // Route::put('dashboard/categories/update/{kategoriBarang:id}', [KategoriBarangController::class, 'update'])->name('categorie.update');
+    // Route::delete('dashboard/categories/{kategoriBarang:id}', [KategoriBarangController::class, 'destroy'])->name('categorie.destroy');
 });
 
 require __DIR__ . '/settings.php';
