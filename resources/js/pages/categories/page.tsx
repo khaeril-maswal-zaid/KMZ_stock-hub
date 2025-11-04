@@ -71,7 +71,7 @@ export default function CategoriesPage({ categories }: initialData) {
         },
     ];
 
-    const ITEMS_PER_PAGE = 5;
+    const ITEMS_PER_PAGE = 20;
 
     const totalPages = Math.ceil(categories.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
