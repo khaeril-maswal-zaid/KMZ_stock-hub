@@ -32,10 +32,11 @@ class TransaksiController extends Controller
             'categories' => KategoriBarang::select(['id', 'name'])->orderBy('name', 'asc')->get(),
             'initialSalesmen' => Sales::select('id', 'name')->orderBy('name', 'asc')->get(),
             'products' => Barang::select(['id', 'code', 'name', 'kategori_barang_id', 'quantity', 'unit'])->with('category:id,name')->get(),
-            'pembelians' => Transaksi::select(['id', 'quantity', 'barang_id', 'unit_price', 'total_price', 'date_transaction'])
+            'pembelians' => Transaksi::select(['id', 'quantity', 'sales_id', 'barang_id', 'unit_price', 'total_price', 'date_transaction'])
                 ->with([
                     'barang:id,name,code,kategori_barang_id',
-                    'barang.category:id,name'
+                    'barang.category:id,name',
+                    'sales'
                 ])
                 ->where('type', 'Pembelian')
                 ->latest()

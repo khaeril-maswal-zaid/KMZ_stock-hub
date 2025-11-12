@@ -172,18 +172,10 @@ export default function SalesPage({
         setDeleteConfirm({ open: false, id: 0 });
     };
 
-    const getProductCategory = (productId: number) => {
-        return (
-            products.find((p: any) => p.id === productId)?.kategori_barang_id ||
-            ''
-        );
-    };
-
-    const filteredSales = sales.filter((sale) => {
+    const filteredSales = sales.filter((purchase) => {
         if (categoryFilter === 'all') return true;
 
-        const productCategory = getProductCategory(sale.barang_id);
-        return productCategory === categoryFilter;
+        return purchase.barang?.kategori_barang_id === Number(categoryFilter);
     });
 
     const breadcrumbs: BreadcrumbItem[] = [

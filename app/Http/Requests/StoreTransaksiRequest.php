@@ -26,12 +26,12 @@ class StoreTransaksiRequest extends FormRequest
             'quantity' => 'required|integer|min:1',
             'unit_price' => 'required|numeric|min:1',
             'type' => 'required|in:Penjualan,Pembelian',
-            'date_transaction' => 'required|date'
+            'date_transaction' => 'required|date|after_or_equal:2000-01-01'
         ];
 
         // Jika type = Pembelian, maka salesman_id wajib dan harus valid
         if ($this->input('type') === 'Pembelian') {
-            // $rules['salesman'] = 'required|exists:sales,id';
+            $rules['salesman'] = 'required|exists:sales,id';
         }
 
         return $rules;
@@ -52,6 +52,7 @@ class StoreTransaksiRequest extends FormRequest
             'salesman_id.required' => 'Salesman wajib dipilih untuk pembelian.',
             'salesman_id.exists' => 'Salesman yang dipilih tidak ditemukan.',
             'date_transaction.required' => 'Tanggal ' . $this->input('type') . ' wajib diisi.',
+            'date_transaction.after_or_equal' => 'Tanggal ' . $this->input('type') . ' tidak boleh sebelum tahun 2000.',
         ];
     }
 }

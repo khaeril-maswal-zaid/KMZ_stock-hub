@@ -161,18 +161,10 @@ export default function PurchasesPage({
         setDeleteConfirm({ open: false, id: 0 });
     };
 
-    const getProductCategory = (barang_id: number) => {
-        return (
-            products.find((p: any) => p.id === barang_id)?.kategori_barang_id ||
-            ''
-        );
-    };
-
     const filteredPurchases = purchases.filter((purchase) => {
         if (categoryFilter === 'all') return true;
 
-        const productCategory = getProductCategory(purchase.barang_id);
-        return productCategory === categoryFilter;
+        return purchase.barang?.kategori_barang_id === Number(categoryFilter);
     });
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -264,7 +256,7 @@ export default function PurchasesPage({
 
                     {/* Barang Tersedia Card - Cyan Gradient */}
                     <div className="transition-smooth relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-cyan-50 to-cyan-100/50 shadow-sm hover:shadow-md dark:from-cyan-950/30 dark:to-cyan-900/20">
-                        <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-cyan-500 to-cyan-600"></div>
+                        <div className="absolute top-0 bottom-0 left-0 w-1 bg-linear-to-b from-cyan-500 to-cyan-600"></div>
                         <div className="p-6">
                             <div className="mb-4 flex items-center justify-between">
                                 <h3 className="text-sm font-medium text-muted-foreground">
@@ -284,8 +276,8 @@ export default function PurchasesPage({
                     </div>
                 </div>
 
-                <div className="relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-slate-50 to-slate-100/50 shadow-sm dark:from-slate-950/30 dark:to-slate-900/20">
-                    <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-slate-400 to-slate-500"></div>
+                <div className="relative overflow-hidden rounded-lg border border-border bg-linear-to-br from-slate-50 to-slate-100/50 shadow-sm dark:from-slate-950/30 dark:to-slate-900/20">
+                    <div className="absolute top-0 bottom-0 left-0 w-1 bg-linear-to-b from-slate-400 to-slate-500"></div>
                     <div className="p-6">
                         <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div>
@@ -326,6 +318,7 @@ export default function PurchasesPage({
                                         <TableHead>Tanggal</TableHead>
                                         <TableHead>Kode Barang</TableHead>
                                         <TableHead>Nama Barang</TableHead>
+                                        <TableHead>Sales</TableHead>
                                         <TableHead>Kategori</TableHead>
                                         <TableHead className="text-right">
                                             Jumlah
@@ -366,6 +359,9 @@ export default function PurchasesPage({
                                                     </TableCell>
                                                     <TableCell>
                                                         {purchase.barang?.name}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {purchase.sales?.name}
                                                     </TableCell>
                                                     <TableCell className="text-sm text-muted-foreground">
                                                         {

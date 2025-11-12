@@ -85,14 +85,22 @@ export default function ProductsPage({ products, categories }: initialData) {
         setEditingProduct(null);
     };
 
-    const filteredProducts = products.filter(
-        (p) =>
-            (categoryFilter === 'all' ||
-                p.kategori_barang_id === Number(categoryFilter)) &&
-            (stockFilter === 'all' ||
-                (stockFilter === 'empty' && p.quantity === 0) ||
-                (stockFilter === 'ready' && p.quantity > 0)),
-    );
+    const filteredProducts = products.filter((p) => {
+        const matchesSearch =
+            p.name.toLowerCase().includes(searchTerm.trim().toLowerCase()) ||
+            p.code.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesCategory =
+            categoryFilter === 'all' ||
+            p.kategori_barang_id === Number(categoryFilter);
+
+        const matchesStock =
+            stockFilter === 'all' ||
+            (stockFilter === 'empty' && p.quantity === 0) ||
+            (stockFilter === 'ready' && p.quantity > 0);
+
+        return matchesSearch && matchesCategory && matchesStock;
+    });
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
