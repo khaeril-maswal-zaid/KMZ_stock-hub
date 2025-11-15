@@ -30,7 +30,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('dashboard/products/destroy/{barang:code}', [BarangController::class, 'destroy'])->name('product.destroy');
 
     Route::get('dashboard/purchases', [TransaksiController::class, 'pembelian'])->name('transaction.pembelian');
+    Route::get('dashboard/purchases/search/{query}', [TransaksiController::class, 'pembelian'])->name('transaction.searchPembelian');
     Route::get('dashboard/sellings', [TransaksiController::class, 'penjualan'])->name('transaction.penjualan');
+    Route::get('dashboard/sellings/search/{query}', [TransaksiController::class, 'penjualan'])->name('transaction.searchPenjualan');
     Route::post('dashboard/transactions/store', [TransaksiController::class, 'store'])->name('transaction.store');
     Route::delete('dashboard/transactions/destroy{transaksi}', [TransaksiController::class, 'destroy'])->name('transaction.destroy');
 

@@ -18,9 +18,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // KategoriBarang::factory(10)->create();
-        // Sales::factory(100)->create();
+        // Sales::factory(50)->create();
         // Barang::factory(100)->create();
-        // Transaksi::factory(100)->create();
+        // Transaksi::factory(500)->create();
 
         User::firstOrCreate(
             ['email' => 'administrator@cherish.co.id'],

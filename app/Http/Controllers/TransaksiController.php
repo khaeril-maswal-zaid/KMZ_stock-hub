@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateTransaksiRequest;
 use App\Models\Barang;
 use App\Models\KategoriBarang;
 use App\Models\Sales;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,7 +17,7 @@ class TransaksiController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function pembelian(): Response
+    public function pembelian($query = null): Response
     {
         // Total Barang (jumlah item unik)
         $totalPembelian = Transaksi::where('type', 'Pembelian')->count();
@@ -28,20 +29,27 @@ class TransaksiController extends Controller
         // Total Stok (akumulasi semua quantity barang)
         $totalBarang = Barang::count();
 
+        $pembelians = Transaksi::select(['id', 'quantity', 'sales_id', 'barang_id', 'unit_price', 'total_price', 'date_transaction'])
+            ->with([
+                'barang:id,name,code,kategori_barang_id',
+                'barang.category:id,name',
+                'sales'
+            ])
+            ->where('type', 'Pembelian')
+            ->latest();
+
+        if ($query) {
+            $pembelians->whereHas('barang', function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                    ->orWhere('code', 'like', "%{$query}%");
+            });
+        }
+
         $data = [
             'categories' => KategoriBarang::select(['id', 'name'])->orderBy('name', 'asc')->get(),
             'initialSalesmen' => Sales::select('id', 'name')->orderBy('name', 'asc')->get(),
             'products' => Barang::select(['id', 'code', 'name', 'kategori_barang_id', 'quantity', 'unit'])->with('category:id,name')->get(),
-            'pembelians' => Transaksi::select(['id', 'quantity', 'sales_id', 'barang_id', 'unit_price', 'total_price', 'date_transaction'])
-                ->with([
-                    'barang:id,name,code,kategori_barang_id',
-                    'barang.category:id,name',
-                    'sales'
-                ])
-                ->where('type', 'Pembelian')
-                ->latest()
-                ->paginate(100),
-
+            'pembelians' => $pembelians->take(100)->get(),
             'totalPembelian' => $totalPembelian,
             'totalNilaiPembelian' => $totalNilaiPembelian,
             'totalBarang' => $totalBarang,
@@ -50,7 +58,7 @@ class TransaksiController extends Controller
         return Inertia::render('purchases/page', $data);
     }
 
-    public function penjualan(): Response
+    public function penjualan($query = null): Response
     {
         // Total Barang (jumlah item unik)
         $totalPenjualan = Transaksi::where('type', 'Penjualan')->count();
@@ -62,19 +70,26 @@ class TransaksiController extends Controller
         $totalNilaiPembelian = Transaksi::where('type', 'Pembelian')
             ->sum('total_price');
 
+        $penjualans = Transaksi::select(['id', 'quantity', 'barang_id', 'unit_price', 'total_price', 'date_transaction'])
+            ->with([
+                'barang:id,name,code,kategori_barang_id',
+                'barang.category:id,name'
+            ])
+            ->where('type', 'Penjualan')
+            ->latest();
+
+        if ($query) {
+            $penjualans->whereHas('barang', function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                    ->orWhere('code', 'like', "%{$query}%");
+            });
+        }
+
 
         $data = [
             'categories' => KategoriBarang::select(['id', 'name'])->orderBy('name', 'asc')->get(),
             'products' => Barang::select(['id', 'code', 'name', 'kategori_barang_id', 'quantity', 'price', 'unit'])->with('category:id,name')->get(),
-            'penjualans' => Transaksi::select(['id', 'quantity', 'barang_id', 'unit_price', 'total_price', 'date_transaction'])
-                ->with([
-                    'barang:id,name,code,kategori_barang_id',
-                    'barang.category:id,name'
-                ])
-                ->where('type', 'Penjualan')
-                ->latest()
-                ->paginate(100),
-
+            'penjualans'  => $penjualans->take(100)->get(),
             'totalPenjualan' => $totalPenjualan,
             'totalNilaiPenjualan' => $totalNilaiPenjualan,
             'totalKeuntungan' => $totalNilaiPenjualan - $totalNilaiPembelian,

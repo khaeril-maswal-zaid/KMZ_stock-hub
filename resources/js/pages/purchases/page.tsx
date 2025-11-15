@@ -4,6 +4,7 @@ import { BulkTransactionDialog } from '@/components/stockhub/bulk-transaction-di
 import { DeleteConfirmDialog } from '@/components/stockhub/delete-confirm-dialog';
 import { TransactionDialog } from '@/components/stockhub/transaction-dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
@@ -23,21 +24,16 @@ import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateIna } from '@/lib/date';
 import { deletePurchase, transaction } from '@/lib/storage';
-import type {
-    Category,
-    PaginatedResponse,
-    Product,
-    Purchase,
-    Salesman,
-} from '@/lib/types';
-import { pembelian } from '@/routes/transaction';
+import type { Category, Product, Purchase, Salesman } from '@/lib/types';
+import { pembelian, searchPembelian } from '@/routes/transaction';
 import { BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     ChevronLeft,
     ChevronRight,
     Package,
     Plus,
+    Search,
     Trash2,
     TrendingUp,
 } from 'lucide-react';
@@ -45,7 +41,7 @@ import { useState } from 'react';
 
 interface initialData {
     products: Product[];
-    pembelians: PaginatedResponse<Purchase>;
+    pembelians: Purchase[];
     initialSalesmen: Salesman[];
     categories: Category[];
     totalPembelian: String;
@@ -62,11 +58,26 @@ export default function PurchasesPage({
     totalNilaiPembelian,
     totalBarang,
 }: initialData) {
-    const purchases = pembelians.data;
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [open, setOpen] = useState(false);
     const [bulkOpen, setBulkOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+
+    const handelSearch = (data: string) => {
+        if (data == '') {
+            router.get(pembelian.url());
+        } else {
+            router.get(
+                searchPembelian.url(data),
+                {},
+                {
+                    preserveScroll: true,
+                    preserveState: true,
+                    replace: true,
+                },
+            );
+        }
+    };
 
     const [deleteConfirm, setDeleteConfirm] = useState<{
         open: boolean;
@@ -161,7 +172,7 @@ export default function PurchasesPage({
         setDeleteConfirm({ open: false, id: 0 });
     };
 
-    const filteredPurchases = purchases.filter((purchase) => {
+    const filteredPurchases = pembelians.filter((purchase) => {
         if (categoryFilter === 'all') return true;
 
         return purchase.barang?.kategori_barang_id === Number(categoryFilter);
@@ -273,6 +284,22 @@ export default function PurchasesPage({
                                 Produk
                             </p>
                         </div>
+                    </div>
+                </div>
+
+                {/* Search  */}
+                <div className="flex flex-col gap-4 md:flex-row">
+                    <div className="relative flex-1">
+                        <Search className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Cari pembelian atau kode..."
+                            // value={searchPembelianTerm}
+                            onChange={(e) => {
+                                handelSearch(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            className="pl-10"
+                        />
                     </div>
                 </div>
 

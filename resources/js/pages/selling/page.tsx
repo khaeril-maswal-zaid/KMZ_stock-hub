@@ -4,6 +4,7 @@ import { BulkTransactionDialog } from '@/components/stockhub/bulk-transaction-di
 import { DeleteConfirmDialog } from '@/components/stockhub/delete-confirm-dialog';
 import { TransactionDialog } from '@/components/stockhub/transaction-dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
@@ -23,21 +24,17 @@ import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateIna } from '@/lib/date';
 import { deletePurchase, transaction } from '@/lib/storage';
-import type {
-    Category,
-    PaginatedResponse,
-    Product,
-    Sale,
-    Salesman,
-} from '@/lib/types';
+import type { Category, Product, Sale, Salesman } from '@/lib/types';
 import { dashboard } from '@/routes';
+import { penjualan, searchPenjualan } from '@/routes/transaction';
 import { BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     ChevronLeft,
     ChevronRight,
     Package,
     Plus,
+    Search,
     ShoppingCart,
     Trash2,
     TrendingUp,
@@ -46,11 +43,11 @@ import { useState } from 'react';
 
 interface initialData {
     products: Product[];
-    penjualans: PaginatedResponse<Sale>;
+    penjualans: Sale[];
     categories: Category[];
     initialSalesmen: Salesman[];
     totalPenjualan: String;
-    totalNilaiPenjualan: String;
+    totalNilaiPenjualan: Number;
     totalKeuntungan: String;
 }
 
@@ -63,11 +60,26 @@ export default function SalesPage({
     totalNilaiPenjualan,
     totalKeuntungan,
 }: initialData) {
-    const sales = penjualans.data;
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [bulkOpen, setBulkOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+
+    const handelSearch = (data: string) => {
+        if (data == '') {
+            router.get(penjualan.url());
+        } else {
+            router.get(
+                searchPenjualan.url(data),
+                {},
+                {
+                    preserveScroll: true,
+                    preserveState: true,
+                    replace: true,
+                },
+            );
+        }
+    };
 
     const [deleteConfirm, setDeleteConfirm] = useState<{
         open: boolean;
@@ -172,7 +184,7 @@ export default function SalesPage({
         setDeleteConfirm({ open: false, id: 0 });
     };
 
-    const filteredSales = sales.filter((purchase) => {
+    const filteredSales = penjualans.filter((purchase) => {
         if (categoryFilter === 'all') return true;
 
         return purchase.barang?.kategori_barang_id === Number(categoryFilter);
@@ -220,6 +232,21 @@ export default function SalesPage({
                             <Plus className="h-4 w-4" />
                             Catat Penjualan
                         </Button>
+                    </div>
+                </div>
+
+                {/* Search  */}
+                <div className="flex flex-col gap-4 md:flex-row">
+                    <div className="relative flex-1">
+                        <Search className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Cari pembelian atau kode..."
+                            onChange={(e) => {
+                                handelSearch(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            className="pl-10"
+                        />
                     </div>
                 </div>
 
