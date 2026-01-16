@@ -28,19 +28,19 @@ export interface Category {
 export interface Salesman {
     id: number;
     name: string;
+    code: string;
     email?: string;
     phone?: string;
     created_at: string;
 }
 
 export interface Product {
-    id: Number;
     name: string;
     kategori_barang_id: number;
-    price: number;
     unit: 'PCS' | 'KOLI';
     quantity: number;
     code?: string;
+    id?: number;
     category?: Category;
 }
 

@@ -7,6 +7,8 @@ use App\Http\Requests\StoreBarangRequest;
 use App\Http\Requests\UpdateBarangRequest;
 use App\Models\KategoriBarang;
 use App\Models\Sales;
+use App\Models\Transaksi;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,8 +22,11 @@ class BarangController extends Controller
         $data = [
             'categories' => KategoriBarang::select(['id', 'name'])->orderBy('name', 'asc')->get(),
             'products' => Barang::select(['code', 'name', 'unit', 'quantity', 'price', 'kategori_barang_id'])
+                ->orderBy('name', 'asc')
                 ->with('category:id,name')
                 ->get(),
+            'initialSalesmen' => Sales::select('id', 'name', 'code')->orderBy('name', 'asc')->get(),
+
         ];
 
         return Inertia::render('products/page', $data);
@@ -73,5 +78,26 @@ class BarangController extends Controller
     public function destroy(Barang $barang)
     {
         $barang->delete();
+    }
+
+    public function riwayatPemesanan(Barang $barang, Request $request): Response
+    {
+        $sales = Sales::select('id')->where('code', $request->sales)->first();
+
+        $data = [
+            'riwayats'  => Transaksi::select(['id', 'quantity', 'sales_id', 'barang_id', 'unit_price', 'total_price', 'date_transaction'])
+                ->where('type', 'Pembelian')
+                ->where('barang_id', $barang->id)
+                ->where('sales_id', $sales->id)
+                ->with([
+                    'barang:id,name,code,kategori_barang_id',
+                    'barang.category:id,name',
+                    'sales'
+                ])
+                ->latest()
+                ->get()
+        ];
+
+        return Inertia::render('products/riwayat', $data);
     }
 }

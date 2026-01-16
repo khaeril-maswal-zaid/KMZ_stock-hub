@@ -1,17 +1,7 @@
 'use client';
 
-import { BulkTransactionDialog } from '@/components/stockhub/bulk-transaction-dialog';
-import { DeleteConfirmDialog } from '@/components/stockhub/delete-confirm-dialog';
-import { TransactionDialog } from '@/components/stockhub/transaction-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -20,46 +10,26 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateIna } from '@/lib/date';
-import type { Category, Product, Purchase, Salesman } from '@/lib/types';
-import {
-    destroy,
-    massal,
-    pembelian,
-    searchPembelian,
-    store,
-} from '@/routes/transaction';
+import type { Purchase } from '@/lib/types';
+import { pembelian, searchPembelian } from '@/routes/transaction';
 import { BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import {
     ChevronLeft,
     ChevronRight,
     Package,
-    Plus,
     Search,
     Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
 
 interface initialData {
-    products: Product[];
-    pembelians: Purchase[];
-    initialSalesmen: Salesman[];
-    categories: Category[];
+    riwayats: Purchase[];
 }
 
-export default function PurchasesPage({
-    products,
-    pembelians,
-    initialSalesmen,
-    categories,
-}: initialData) {
-    const [categoryFilter, setCategoryFilter] = useState<string>('all');
-    const [salesFilter, setSalesFilter] = useState<string>('all');
-    const [open, setOpen] = useState(false);
-    const [bulkOpen, setBulkOpen] = useState(false);
+export default function HistoriesPage({ riwayats }: initialData) {
     const [currentPage, setCurrentPage] = useState(1);
 
     const handelSearch = (data: string) => {
@@ -78,141 +48,6 @@ export default function PurchasesPage({
         }
     };
 
-    const [deleteConfirm, setDeleteConfirm] = useState<{
-        open: boolean;
-        id: number;
-    }>({ open: false, id: 0 });
-
-    const { toast } = useToast();
-
-    const handleSubmit = (
-        barang_id: string,
-        quantity: number,
-        salesman: string,
-        unit_price: number,
-        date_transaction: Date,
-    ) => {
-        if (!barang_id || !quantity || !unit_price) {
-            toast({
-                title: 'Error',
-                description: 'Semua field wajib diisi',
-                variant: 'destructive',
-            });
-            return;
-        }
-
-        try {
-            const data = {
-                barang_id,
-                quantity,
-                unit_price: unit_price,
-                type: 'Pembelian',
-                salesman,
-                date_transaction,
-            };
-
-            router.post(store().url, data, {
-                onSuccess: () => {
-                    toast({
-                        title: 'Berhasil',
-                        description: `Pembelian telah dicatat`,
-                    });
-                },
-                onError: (err) => {
-                    toast({
-                        title: 'Gagal',
-                        description: Object.values(err)[0],
-                        variant: 'destructive',
-                    });
-                },
-            });
-
-            setOpen(false);
-        } catch (error) {
-            toast({
-                title: 'Error',
-                description: 'Terjadi kesalahan',
-                variant: 'destructive',
-            });
-        }
-    };
-
-    const handleBulkPurchase = (items: any[]) => {
-        try {
-            items.forEach((item) => {
-                const data = {
-                    barang_id: item.productId,
-                    quantity: item.quantity,
-                    unit_price: item.unitPrice,
-                    salesman: item.salesId,
-                    type: 'Pembelian',
-                    date_transaction: item.purchaseDate,
-                };
-            });
-            router.post(
-                massal().url,
-                {
-                    items,
-                    type: 'Pembelian',
-                },
-                {
-                    onSuccess: (page) => {
-                        toast({
-                            title: 'Berhasil',
-                            description: page.props.flash.success,
-                        });
-                    },
-                    onError: (err) => {
-                        toast({
-                            title: 'Gagal',
-                            description: Object.values(err)[0],
-                            variant: 'destructive',
-                        });
-                    },
-                },
-            );
-
-            setBulkOpen(false);
-        } catch (error) {
-            toast({
-                title: 'Error',
-                description: 'Terjadi kesalahan',
-                variant: 'destructive',
-            });
-        }
-    };
-
-    const handleDelete = (id: number) => {
-        setDeleteConfirm({ open: true, id });
-    };
-
-    const handleConfirmDelete = () => {
-        router.delete(destroy(deleteConfirm.id).url, {
-            onSuccess: () => {
-                toast({
-                    title: 'Berhasil',
-                    description: 'Pembelian telah dihapus',
-                });
-            },
-            onError: (err) => {
-                console.log(err);
-            },
-        });
-
-        setDeleteConfirm({ open: false, id: 0 });
-    };
-
-    const filteredPurchases = pembelians.filter((purchase) => {
-        const filterKat =
-            categoryFilter === 'all' ||
-            purchase.barang?.kategori_barang_id === Number(categoryFilter);
-
-        const filterSal =
-            salesFilter === 'all' || purchase.sales?.id === Number(salesFilter);
-
-        return filterKat && filterSal;
-    });
-
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Pembelian',
@@ -221,10 +56,10 @@ export default function PurchasesPage({
     ];
 
     const ITEMS_PER_PAGE = 50;
-    const totalPages = Math.ceil(filteredPurchases.length / ITEMS_PER_PAGE);
+    const totalPages = Math.ceil(riwayats.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    const paginatedProducts = filteredPurchases.slice(startIndex, endIndex);
+    const paginatedProducts = riwayats.slice(startIndex, endIndex);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -238,20 +73,6 @@ export default function PurchasesPage({
                         <p className="mt-1 text-muted-foreground">
                             Catat pembelian barang untuk menambah stok
                         </p>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button
-                            onClick={() => setBulkOpen(true)}
-                            variant="outline"
-                            className="gap-2"
-                        >
-                            <Plus className="h-4 w-4" />
-                            Pembelian Massal
-                        </Button>
-                        <Button onClick={() => setOpen(true)} className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            Tambah Pembelian
-                        </Button>
                     </div>
                 </div>
 
@@ -284,60 +105,12 @@ export default function PurchasesPage({
                                     dicatat
                                 </p>
                             </div>
-                            <div className="flex space-x-2">
-                                <Select
-                                    value={salesFilter}
-                                    onValueChange={setSalesFilter}
-                                >
-                                    <SelectTrigger className="w-full bg-gray-50 md:w-48">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            Semua Sales
-                                        </SelectItem>
-                                        {initialSalesmen.map((cat) => (
-                                            <SelectItem
-                                                key={cat.id}
-                                                value={String(cat.id)}
-                                            >
-                                                {cat.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-
-                                <Select
-                                    value={categoryFilter}
-                                    onValueChange={setCategoryFilter}
-                                >
-                                    <SelectTrigger className="w-full bg-gray-50 md:w-48">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            Semua Kategori
-                                        </SelectItem>
-                                        {categories.map((cat) => (
-                                            <SelectItem
-                                                key={cat.id}
-                                                value={String(cat.id)}
-                                            >
-                                                {cat.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
                         </div>
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Tanggal</TableHead>
-                                        <TableHead>Kode Barang</TableHead>
-                                        <TableHead>Nama Barang</TableHead>
-                                        <TableHead>Kategori</TableHead>
                                         <TableHead>Sales</TableHead>
                                         <TableHead className="text-right">
                                             Jumlah
@@ -354,7 +127,7 @@ export default function PurchasesPage({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredPurchases.length === 0 ? (
+                                    {riwayats.length === 0 ? (
                                         <TableRow>
                                             <TableCell
                                                 colSpan={8}
@@ -372,18 +145,6 @@ export default function PurchasesPage({
                                                         {formatDateIna(
                                                             purchase.date_transaction,
                                                         )}
-                                                    </TableCell>
-                                                    <TableCell className="font-mono text-sm">
-                                                        {purchase.barang?.code}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {purchase.barang?.name}
-                                                    </TableCell>
-                                                    <TableCell className="text-sm text-muted-foreground">
-                                                        {
-                                                            purchase.barang
-                                                                ?.category?.name
-                                                        }
                                                     </TableCell>
                                                     <TableCell>
                                                         {purchase.sales?.name}
@@ -427,15 +188,12 @@ export default function PurchasesPage({
                                 </TableBody>
                             </Table>
                         </div>
-                        {filteredPurchases.length > 0 && (
+                        {riwayats.length > 0 && (
                             <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
                                 <div className="text-sm text-muted-foreground">
                                     Menampilkan {startIndex + 1}-
-                                    {Math.min(
-                                        endIndex,
-                                        filteredPurchases.length,
-                                    )}{' '}
-                                    dari {filteredPurchases.length} barang
+                                    {Math.min(endIndex, riwayats.length)} dari{' '}
+                                    {riwayats.length} barang
                                 </div>
                                 <div className="flex gap-2">
                                     <Button
@@ -496,36 +254,6 @@ export default function PurchasesPage({
                         )}
                     </div>
                 </div>
-
-                <DeleteConfirmDialog
-                    open={deleteConfirm.open}
-                    onOpenChange={(open) =>
-                        setDeleteConfirm({ ...deleteConfirm, open })
-                    }
-                    title="Hapus Pembelian"
-                    description="Apakah Anda yakin ingin menghapus pembelian ini? Stok barang tidak terpengaruh."
-                    onConfirm={handleConfirmDelete}
-                />
-
-                <BulkTransactionDialog
-                    open={bulkOpen}
-                    onOpenChange={setBulkOpen}
-                    products={products}
-                    initialSalesmen={initialSalesmen}
-                    type="purchase"
-                    categories={categories}
-                    onSubmit={handleBulkPurchase}
-                />
-
-                <TransactionDialog
-                    open={open}
-                    onOpenChange={setOpen}
-                    products={products}
-                    categories={categories}
-                    type="purchase"
-                    initialSalesmen={initialSalesmen}
-                    onSubmit={handleSubmit}
-                />
             </div>
         </AppLayout>
     );

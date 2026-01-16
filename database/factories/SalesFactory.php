@@ -17,7 +17,7 @@ class SalesFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->name(),
+            'name' => $this->faker->unique()->name(),
             'email' => $this->faker->unique()->safeEmail(),
             'phone' => $this->faker->optional()->phoneNumber(),
         ];

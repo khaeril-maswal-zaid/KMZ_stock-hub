@@ -17,8 +17,8 @@ return new class extends Migration
             $table->integer('quantity');
             $table->enum('type', ['Pembelian', 'Penjualan']);
             $table->foreignId('sales_id')->nullable()->constrained()->nullOnDelete();
-            $table->decimal('unit_price', 15, 2);
-            $table->integer('total_price');
+            $table->decimal('unit_price', 15, 2)->nullable();
+            $table->integer('total_price')->nullable();
             $table->date('date_transaction');
             $table->timestamps();
         });

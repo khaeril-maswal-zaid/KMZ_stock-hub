@@ -20,20 +20,22 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', [MorePagesController::class, 'dashboard'])->name('dashboard');
+    // Route::get('dashboard', [MorePagesController::class, 'dashboard'])->name('dashboard');
 
     Route::get('dashboard/reports', [MorePagesController::class, 'laporan'])->name('report');
 
-    Route::get('dashboard/products', [BarangController::class, 'index'])->name('product.index');
+    Route::get('dashboard', [BarangController::class, 'index'])->name('dashboard');
     Route::post('dashboardproducts/store', [BarangController::class, 'store'])->name('product.store');
     Route::put('dashboard/products/update/{barang:code}', [BarangController::class, 'update'])->name('product.update');
     Route::delete('dashboard/products/destroy/{barang:code}', [BarangController::class, 'destroy'])->name('product.destroy');
+    Route::get('dashboard/products/riwayat-pemesanan/sales-barang/{barang:code}', [BarangController::class, 'riwayatPemesanan'])->name('product.riwayat');
 
     Route::get('dashboard/purchases', [TransaksiController::class, 'pembelian'])->name('transaction.pembelian');
     Route::get('dashboard/purchases/search/{query}', [TransaksiController::class, 'pembelian'])->name('transaction.searchPembelian');
     Route::get('dashboard/sellings', [TransaksiController::class, 'penjualan'])->name('transaction.penjualan');
     Route::get('dashboard/sellings/search/{query}', [TransaksiController::class, 'penjualan'])->name('transaction.searchPenjualan');
     Route::post('dashboard/transactions/store', [TransaksiController::class, 'store'])->name('transaction.store');
+    Route::post('dashboard/transactions/store-massal', [TransaksiController::class, 'storeMassal'])->name('transaction.massal');
     Route::delete('dashboard/transactions/destroy{transaksi}', [TransaksiController::class, 'destroy'])->name('transaction.destroy');
 
 
