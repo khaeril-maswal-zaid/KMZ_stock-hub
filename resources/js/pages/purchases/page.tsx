@@ -25,9 +25,9 @@ import AppLayout from '@/layouts/app-layout';
 import { formatDateIna } from '@/lib/date';
 import { deletePurchase, transaction } from '@/lib/storage';
 import type { Category, Product, Purchase, Salesman } from '@/lib/types';
-import { pembelian, searchPembelian } from '@/routes/transaction';
-import { BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { pembelian, searchPembelian, store } from '@/routes/transaction';
+import { BreadcrumbItem, SharedData } from '@/types';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     ChevronLeft,
     ChevronRight,
@@ -37,7 +37,7 @@ import {
     Trash2,
     TrendingUp,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface initialData {
     products: Product[];
@@ -58,6 +58,8 @@ export default function PurchasesPage({
     totalNilaiPembelian,
     totalBarang,
 }: initialData) {
+    const { flash, errors } = usePage<SharedData>().props;
+
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [open, setOpen] = useState(false);
     const [bulkOpen, setBulkOpen] = useState(false);
@@ -130,34 +132,39 @@ export default function PurchasesPage({
     };
 
     const handleBulkPurchase = (items: any[]) => {
-        try {
-            items.forEach((item) => {
-                const data = {
-                    barang_id: item.productId,
-                    quantity: item.quantity,
-                    unit_price: item.unitPrice,
-                    salesman: item.salesId,
-                    type: 'Pembelian',
-                    date_transaction: item.purchaseDate,
-                };
+        const payload = {
+            items: items.map((item) => ({
+                barang_id: item.productId,
+                quantity: item.quantity,
+                unit_price: item.unitPrice,
+                salesman: item.salesId,
+                type: 'Pembelian',
+                date_transaction: item.purchaseDate,
+            })),
+        };
 
-                transaction(data);
-            });
+        router.post(store.url(), payload);
+
+        setBulkOpen(false);
+    };
+
+    useEffect(() => {
+        if (Object.keys(errors).length > 0) {
+            const firstError = Object.values(errors)[0];
 
             toast({
-                title: 'Berhasil',
-                description: `${items.length} pembelian massal telah dicatat`,
-            });
-
-            setBulkOpen(false);
-        } catch (error) {
-            toast({
-                title: 'Error',
-                description: 'Terjadi kesalahan',
-                variant: 'destructive',
+                title: 'Gagal',
+                description: firstError,
             });
         }
-    };
+    }, [errors]);
+
+    useEffect(() => {
+        toast({
+            title: 'Berhasil',
+            description: flash.success,
+        });
+    }, [flash.success]);
 
     const handleDelete = (id: number) => {
         setDeleteConfirm({ open: true, id });

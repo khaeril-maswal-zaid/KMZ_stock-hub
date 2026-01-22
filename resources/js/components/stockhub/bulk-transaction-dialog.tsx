@@ -175,10 +175,10 @@ export function BulkTransactionDialog({
         onSubmit(items);
         setItems([]);
         onOpenChange(false);
-        toast({
-            title: 'Berhasil',
-            description: `${items.length} item telah ditambahkan`,
-        });
+        // toast({
+        //     title: 'Berhasil',
+        //     description: `${items.length} item telah ditambahkan`,
+        // });
     };
 
     const getFilteredProducts = (itemId: string) => {

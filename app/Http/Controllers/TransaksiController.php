@@ -109,30 +109,41 @@ class TransaksiController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreTransaksiRequest $request)
+    public function store(Request $request)
     {
-        $barang = Barang::findOrFail($request->barang_id);
+        foreach ($request->items as $item) {
+            $barang = Barang::findOrFail($item['barang_id']);
 
-        $newQuantity = $barang->quantity + ($request->type === 'Pembelian' ? $request->quantity : -$request->quantity);
+            $newQuantity = $barang->quantity + ($item['type'] === 'Pembelian'
+                ? $item['quantity']
+                : -$item['quantity']);
 
-        if ($newQuantity < 0) {
-            return back()->withErrors(['quantity' => 'Stok tidak mencukupi untuk transaksi ini.']);
+            if ($newQuantity < 0) {
+                return back()->withErrors([
+                    'quantity' => "Stok tidak cukup untuk {$barang->name}"
+                ]);
+            }
+
+            $barang->update([
+                'quantity' => $newQuantity
+            ]);
+
+            Transaksi::create([
+                'barang_id' => $barang->id,
+                'sales_id' => $item['salesman'],
+                'quantity' => $item['quantity'],
+                'unit_price' => $item['unit_price'],
+                'total_price' => $item['quantity'] * $item['unit_price'],
+                'type' => $item['type'],
+                'date_transaction' => $item['date_transaction'],
+            ]);
         }
 
-        $barang->update([
-            'quantity' => $newQuantity
-        ]);
-
-        Transaksi::create([
-            'barang_id' => $barang->id,
-            'sales_id' => $request->salesman,
-            'quantity' => $request->quantity,
-            'unit_price' => $request->unit_price,
-            'total_price' => $request->quantity * $request->unit_price,
-            'type' => $request->type,
-            'date_transaction' => date('Y-m-d H:i:s', strtotime($request->date_transaction)),
-        ]);
+        return redirect()
+            ->route('transaction.pembelian')
+            ->with('success', "Berhasil memproses " . count($request->items) . " transaksi.");
     }
+
 
     /**
      * Display the specified resource.

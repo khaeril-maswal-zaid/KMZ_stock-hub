@@ -36,7 +36,7 @@ export function addCategory(data: any) {
 }
 
 export function updateCategory(id: number, updates: any) {
-    router.put(uptKriteria(id).url, updates, {
+    router.put(uptKriteria.url(id), updates, {
         onSuccess: () => {
             // Optionally handle success
         },
@@ -47,7 +47,7 @@ export function updateCategory(id: number, updates: any) {
 }
 
 export function deleteCategory(id: number) {
-    router.delete(destroyKriteria(id).url, {
+    router.delete(destroyKriteria.url(id), {
         onSuccess: () => {
             // Optionally handle success
         },
@@ -58,7 +58,7 @@ export function deleteCategory(id: number) {
 }
 
 export function addProduct(product: any) {
-    router.post(storeProduct().url, product, {
+    router.post(storeProduct.url(), product, {
         onSuccess: () => {
             // Optionally handle success
         },
@@ -69,7 +69,7 @@ export function addProduct(product: any) {
 }
 
 export function updateProduct(code: string, updates: Product) {
-    router.put(udtProduct(code).url, updates, {
+    router.put(udtProduct.url(code), updates, {
         onSuccess: () => {
             // Optionally handle success
         },
@@ -80,7 +80,7 @@ export function updateProduct(code: string, updates: Product) {
 }
 
 export function deleteProduct(code: string) {
-    router.delete(dltProduct(code).url, {
+    router.delete(dltProduct.url(code), {
         onSuccess: () => {
             // Optionally handle success
         },
@@ -91,7 +91,7 @@ export function deleteProduct(code: string) {
 }
 
 export function transaction(data: any) {
-    router.post(storeTransaction().url, data, {
+    router.post(storeTransaction.url(), data, {
         onSuccess: () => {
             return data.type + ' Berhasil';
         },
@@ -104,7 +104,7 @@ export function transaction(data: any) {
 }
 
 export function transactionMassal(data: any) {
-    router.post(storeTransaction().url, data, {
+    router.post(storeTransaction.url(), data, {
         onSuccess: () => {
             return data.type + ' Berhasil';
         },
@@ -117,7 +117,7 @@ export function transactionMassal(data: any) {
 }
 
 export function addSalesman(salesman: any) {
-    router.post(storeSalesmen().url, salesman, {
+    router.post(storeSalesmen.url(), salesman, {
         onSuccess: () => {
             // Optionally handle success
         },
@@ -128,7 +128,7 @@ export function addSalesman(salesman: any) {
 }
 
 export function updateSalesman(id: number, updates: any) {
-    router.put(uptSalesman(id).url, updates, {
+    router.put(uptSalesman.url(id), updates, {
         onSuccess: () => {
             // Optionally handle success
         },
@@ -139,7 +139,7 @@ export function updateSalesman(id: number, updates: any) {
 }
 
 export function deleteSalesman(id: number) {
-    router.delete(dstSalesman(id).url, {
+    router.delete(dstSalesman.url(id), {
         onSuccess: () => {
             // Optionally handle success
         },
@@ -150,7 +150,7 @@ export function deleteSalesman(id: number) {
 }
 
 export function addPurchase(purchase: any) {
-    router.post(storeTransaction().url, purchase, {
+    router.post(storeTransaction().url(), purchase, {
         onSuccess: () => {
             // Optionally handle success
         },
@@ -161,7 +161,7 @@ export function addPurchase(purchase: any) {
 }
 
 export function deletePurchase(id: Number) {
-    router.delete(dltTransaksi(id).url, {
+    router.delete(dltTransaksi.url(id), {
         onSuccess: () => {
             // Optionally handle success
         },
