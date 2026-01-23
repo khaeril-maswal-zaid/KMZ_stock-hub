@@ -24,9 +24,15 @@ import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateIna } from '@/lib/date';
 import type { Category, Product, Purchase, Salesman } from '@/lib/types';
-import { pembelian, searchPembelian } from '@/routes/transaction';
-import { BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import {
+    destroy,
+    massal,
+    pembelian,
+    searchPembelian,
+    store,
+} from '@/routes/transaction';
+import { BreadcrumbItem, SharedData } from '@/types';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     ChevronLeft,
     ChevronRight,
@@ -81,6 +87,46 @@ export default function PurchasesPage({
 
     const { toast } = useToast();
 
+    const handleBulkSale = (items: any[]) => {
+        items.forEach((item) => {
+            const product = products.find((p) => p.id == item.productId);
+
+            if (!product) return;
+
+            if (item.quantity > product.quantity) {
+                toast({
+                    title: 'Gagal',
+                    description: `Stok ${product.name} tidak cukup`,
+                    variant: 'destructive',
+                });
+            }
+        });
+
+        router.post(
+            massal().url,
+            {
+                items,
+                type: 'Pembelian',
+            },
+            {
+                onSuccess: (page) => {
+                    toast({
+                        title: 'Berhasil',
+                        description: page.props.flash.success,
+                    });
+                    setBulkOpen(false);
+                },
+                onError: (err) => {
+                    toast({
+                        title: 'Gagal',
+                        description: Object.values(err)[0],
+                        variant: 'destructive',
+                    });
+                },
+            },
+        );
+    };
+
     const handleSubmit = (
         barang_id: string,
         quantity: number,
@@ -131,29 +177,6 @@ export default function PurchasesPage({
                 variant: 'destructive',
             });
         }
-    };
-
-    const handleBulkPurchase = (items: any[]) => {
-        try {
-            items.forEach((item) => {
-                const data = {
-                    barang_id: item.productId,
-                    quantity: item.quantity,
-                    unit_price: item.unitPrice,
-                    salesman: item.salesId,
-                    type: 'Pembelian',
-                    date_transaction: item.purchaseDate,
-                };
-
-                transaction(data);
-            });
-
-            toast({
-                title: 'Berhasil',
-                description: `${items.length} pembelian massal telah dicatat`,
-            });
-
-        setBulkOpen(false);
     };
 
     useEffect(() => {
@@ -506,7 +529,7 @@ export default function PurchasesPage({
                     initialSalesmen={initialSalesmen}
                     type="purchase"
                     categories={categories}
-                    onSubmit={handleBulkPurchase}
+                    onSubmit={handleBulkSale}
                 />
 
                 <TransactionDialog

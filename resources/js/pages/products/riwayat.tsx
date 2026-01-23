@@ -12,24 +12,26 @@ import {
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateIna } from '@/lib/date';
-import type { Purchase } from '@/lib/types';
+import type { Product, Purchase } from '@/lib/types';
+import { dashboard } from '@/routes';
 import { pembelian, searchPembelian } from '@/routes/transaction';
 import { BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
+    ArrowLeft,
     ChevronLeft,
     ChevronRight,
     Package,
     Search,
-    Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
 
 interface initialData {
     riwayats: Purchase[];
+    barang: Product;
 }
 
-export default function HistoriesPage({ riwayats }: initialData) {
+export default function HistoriesPage({ riwayats, barang }: initialData) {
     const [currentPage, setCurrentPage] = useState(1);
 
     const handelSearch = (data: string) => {
@@ -64,17 +66,72 @@ export default function HistoriesPage({ riwayats }: initialData) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Pembelian" />
+
+            {/* Back Button Outside Main Area */}
+            <div className="mt-4 pl-4">
+                <Link href={String(dashboard.url())}>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-2 text-muted-foreground hover:text-foreground"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Kembali
+                    </Button>
+                </Link>
+            </div>
+
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-foreground">
-                            Pembelian Barang
+                        <h1 className="text-xl font-bold text-foreground">
+                            Riwayat Pembelian Barang
                         </h1>
-                        <p className="mt-1 text-muted-foreground">
-                            Catat pembelian barang untuk menambah stok
-                        </p>
+                        {/* <p className="mt-1 text-muted-foreground">
+                            Lihat detail semua pembelian barang dari sales
+                            tertentu untuk mengelola stok dengan lebih efisien
+                        </p> */}
                     </div>
                 </div>
+
+                {/* Product Information Section */}
+                {barang && (
+                    <div className="rounded-lg border border-border bg-blue-50 p-4 dark:bg-blue-950/20">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <div className="flex-1">
+                                <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                                    Informasi Barang
+                                </h3>
+                                <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-3">
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Nama Barang
+                                        </p>
+                                        <p className="font-semibold text-foreground">
+                                            {barang?.name || '-'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Satuan
+                                        </p>
+                                        <p className="font-semibold text-foreground">
+                                            {barang?.unit || '-'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Kategori
+                                        </p>
+                                        <p className="font-semibold text-foreground">
+                                            {barang?.category?.name || '-'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Search  */}
                 <div className="flex flex-col gap-4 md:flex-row">
@@ -121,9 +178,6 @@ export default function HistoriesPage({ riwayats }: initialData) {
                                         <TableHead className="text-right">
                                             Total
                                         </TableHead>
-                                        <TableHead className="text-center">
-                                            Aksi
-                                        </TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -166,21 +220,6 @@ export default function HistoriesPage({ riwayats }: initialData) {
                                                                 'id-ID',
                                                             )}
                                                     </TableCell>
-
-                                                    <TableCell className="text-center">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    purchase.id,
-                                                                )
-                                                            }
-                                                            className="text-destructive hover:text-destructive"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </TableCell>
                                                 </TableRow>
                                             ),
                                         )
@@ -191,7 +230,7 @@ export default function HistoriesPage({ riwayats }: initialData) {
                         {riwayats.length > 0 && (
                             <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
                                 <div className="text-sm text-muted-foreground">
-                                    Menampilkan {startIndex + 1}-
+                                    Menampilkan {startIndex + 1}-{' '}
                                     {Math.min(endIndex, riwayats.length)} dari{' '}
                                     {riwayats.length} barang
                                 </div>

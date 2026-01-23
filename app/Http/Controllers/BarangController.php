@@ -95,7 +95,9 @@ class BarangController extends Controller
                     'sales'
                 ])
                 ->latest()
-                ->get()
+                ->get(),
+
+            'barang' =>  $barang->load('category')
         ];
 
         return Inertia::render('products/riwayat', $data);
