@@ -23,11 +23,11 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateIna } from '@/lib/date';
-import { addSalesman, deleteSalesman, updateSalesman } from '@/lib/storage';
 import type { Salesman } from '@/lib/types';
 import { dashboard } from '@/routes';
+import { destroy, store, update } from '@/routes/salesmen';
 import { BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { Edit2, Mail, Phone, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -60,12 +60,18 @@ export default function SalesmenPage({ salesmen }: initialData) {
     };
 
     const handleConfirmDelete = () => {
-        deleteSalesman(Number(deleteConfirm.id));
-
-        toast({
-            title: 'Berhasil',
-            description: 'Sales telah dihapus',
+        router.delete(destroy(Number(deleteConfirm.id)).url, {
+            onSuccess: () => {
+                toast({
+                    title: 'Berhasil',
+                    description: 'Sales telah dihapus',
+                });
+            },
+            onError: (err) => {
+                console.log(err);
+            },
         });
+
         setDeleteConfirm({ open: false, id: 0 });
     };
     const handleEdit = (salesman: Salesman) => {
@@ -109,17 +115,28 @@ export default function SalesmenPage({ salesmen }: initialData) {
 
         try {
             if (editingSalesman) {
-                updateSalesman(Number(editingSalesman.id), data);
-
-                toast({
-                    title: 'Berhasil',
-                    description: 'Sales telah diperbarui',
+                router.put(update(Number(editingSalesman.id)).url, data, {
+                    onSuccess: () => {
+                        toast({
+                            title: 'Berhasil',
+                            description: 'Sales telah diperbarui',
+                        });
+                    },
+                    onError: (err) => {
+                        console.log(err);
+                    },
                 });
             } else {
-                addSalesman(data);
-                toast({
-                    title: 'Berhasil',
-                    description: 'Sales telah ditambahkan',
+                router.post(store().url, data, {
+                    onSuccess: () => {
+                        toast({
+                            title: 'Berhasil',
+                            description: 'Sales telah ditambahkan',
+                        });
+                    },
+                    onError: (err) => {
+                        console.log(err);
+                    },
                 });
             }
             setIsDialogOpen(false);
@@ -280,6 +297,7 @@ export default function SalesmenPage({ salesmen }: initialData) {
                                 <Label htmlFor="name">Nama Sales</Label>
                                 <Input
                                     id="name"
+                                    className="mt-1"
                                     placeholder="Contoh: Budi Santoso"
                                     value={formData.name}
                                     onChange={(e) =>
@@ -296,6 +314,7 @@ export default function SalesmenPage({ salesmen }: initialData) {
                                 <Input
                                     id="email"
                                     type="email"
+                                    className="mt-1"
                                     placeholder="budi@example.com"
                                     value={formData.email}
                                     onChange={(e) =>
@@ -313,6 +332,7 @@ export default function SalesmenPage({ salesmen }: initialData) {
                                 </Label>
                                 <Input
                                     id="phone"
+                                    className="mt-1"
                                     placeholder="081234567890"
                                     value={formData.phone}
                                     onChange={(e) =>

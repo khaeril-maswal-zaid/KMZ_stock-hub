@@ -16,7 +16,6 @@ class Barang extends Model
         'code',
         'name',
         'kategori_barang_id',
-        'price',
         'quantity',
         'unit',
     ];

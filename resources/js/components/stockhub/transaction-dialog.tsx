@@ -106,12 +106,6 @@ export function TransactionDialog({
         }
     };
 
-    const totalPrice = selectedProduct
-        ? type === 'purchase' && unitPrice
-            ? Number.parseFloat(unitPrice) * (Number.parseInt(quantity) || 0)
-            : selectedProduct.price * (Number.parseInt(quantity) || 0)
-        : 0;
-
     const stockAfter =
         selectedProduct && quantity
             ? type === 'purchase'
@@ -203,19 +197,6 @@ export function TransactionDialog({
                                         {selectedProduct?.category?.name || '-'}
                                     </span>
                                 </div>
-                                {type === 'sale' && (
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">
-                                            Harga Satuan:
-                                        </span>
-                                        <span className="font-bold text-foreground">
-                                            Rp{' '}
-                                            {selectedProduct.price.toLocaleString(
-                                                'id-ID',
-                                            )}
-                                        </span>
-                                    </div>
-                                )}
                                 <div className="border-t border-blue-200 pt-2 dark:border-blue-800">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">
@@ -304,24 +285,6 @@ export function TransactionDialog({
                                                 {stockAfter}
                                             </span>
                                         </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {quantity && (
-                                <div className="rounded-lg bg-primary/10 p-3">
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-medium">
-                                            Total{' '}
-                                            {type === 'purchase'
-                                                ? 'Pembelian'
-                                                : 'Penjualan'}
-                                            :
-                                        </span>
-                                        <span className="text-lg font-bold text-primary">
-                                            Rp{' '}
-                                            {totalPrice.toLocaleString('id-ID')}
-                                        </span>
                                     </div>
                                 </div>
                             )}

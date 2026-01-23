@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('sales', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('code')->unique();
             $table->string('email')->nullable()->unique();
             $table->string('phone')->nullable();
             $table->timestamps();

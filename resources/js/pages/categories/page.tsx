@@ -12,11 +12,11 @@ import {
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
-import { deleteCategory } from '@/lib/storage';
 import type { Category } from '@/lib/types';
 import { dashboard } from '@/routes';
+import { destroy } from '@/routes/categorie';
 import { BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight, Edit2, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 interface initialData {
@@ -40,12 +40,18 @@ export default function CategoriesPage({ categories }: initialData) {
     };
 
     const handleConfirmDelete = () => {
-        deleteCategory(deleteConfirm.id);
-
-        toast({
-            title: 'Berhasil',
-            description: 'Kategori telah dihapus',
+        router.delete(destroy(deleteConfirm.id).url, {
+            onSuccess: () => {
+                toast({
+                    title: 'Berhasil',
+                    description: 'Kategori telah dihapus',
+                });
+            },
+            onError: (err) => {
+                console.log(err);
+            },
         });
+
         setDeleteConfirm({ open: false, id: 0 });
     };
 
@@ -71,7 +77,7 @@ export default function CategoriesPage({ categories }: initialData) {
         },
     ];
 
-    const ITEMS_PER_PAGE = 20;
+    const ITEMS_PER_PAGE = 50;
 
     const totalPages = Math.ceil(categories.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;

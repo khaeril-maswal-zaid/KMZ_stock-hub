@@ -18,8 +18,9 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { addProduct, updateProduct } from '@/lib/storage';
 import type { Category, Product } from '@/lib/types';
+import { store, update } from '@/routes/product';
+import { router } from '@inertiajs/react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 
@@ -39,10 +40,8 @@ export function ProductDialog({
     initialCategories,
 }: ProductDialogProps) {
     const [formData, setFormData] = useState<Product>({
-        // code: '',
         name: '',
         kategori_barang_id: 0,
-        price: 0,
         unit: 'PCS',
         quantity: 0,
     });
@@ -52,19 +51,15 @@ export function ProductDialog({
     useEffect(() => {
         if (product) {
             setFormData({
-                // code: product.code,
                 name: product.name,
                 kategori_barang_id: product.kategori_barang_id,
-                price: product.price,
                 unit: product.unit,
                 quantity: 0,
             });
         } else {
             setFormData({
-                // code: '',
                 name: '',
                 kategori_barang_id: 0,
-                price: 0,
                 unit: 'KOLI',
                 quantity: 0,
             });
@@ -74,7 +69,7 @@ export function ProductDialog({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.name || !formData.kategori_barang_id || !formData.price) {
+        if (!formData.name || !formData.kategori_barang_id) {
             toast({
                 title: 'Error',
                 description: 'Semua field wajib diisi',
@@ -85,26 +80,50 @@ export function ProductDialog({
 
         try {
             if (product) {
-                updateProduct(product.code, {
-                    code: formData.code,
-                    name: formData.name,
-                    kategori_barang_id: formData.kategori_barang_id,
-                    price: formData.price,
-                    unit: formData.unit,
-                });
-                toast({
-                    title: 'Berhasil',
-                    description: 'Barang telah diperbarui',
-                });
+                router.put(
+                    update(product.code).url,
+                    {
+                        code: formData.code,
+                        name: formData.name,
+                        kategori_barang_id: formData.kategori_barang_id,
+                        unit: formData.unit,
+                    },
+                    {
+                        onSuccess: () => {
+                            toast({
+                                title: 'Berhasil',
+                                description: 'Barang telah diperbarui',
+                            });
+                        },
+                        onError: (err) => {
+                            toast({
+                                title: 'Gagal',
+                                description: Object.values(err)[0],
+                                variant: 'destructive',
+                            });
+                        },
+                    },
+                );
             } else {
-                addProduct({
+                const product = {
                     ...formData,
                     kategori_barang_id: Number(formData.kategori_barang_id),
-                    price: Number(formData.price),
-                });
-                toast({
-                    title: 'Berhasil',
-                    description: 'Barang telah ditambahkan',
+                };
+
+                router.post(store().url, product, {
+                    onSuccess: () => {
+                        toast({
+                            title: 'Berhasil',
+                            description: 'Barang baru telah ditambahkan',
+                        });
+                    },
+                    onError: (err) => {
+                        toast({
+                            title: 'Gagal',
+                            description: Object.values(err)[0],
+                            variant: 'destructive',
+                        });
+                    },
                 });
             }
             onOpenChange(false);
@@ -133,24 +152,10 @@ export function ProductDialog({
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* <div className="space-y-2">
-                        <Label htmlFor="code">Kode Barang</Label>
-                        <Input
-                            id="code"
-                            placeholder="Contoh: ELEC001"
-                            value={formData.code}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    code: e.target.value,
-                                })
-                            }
-                        />
-                    </div> */}
-
                     <div className="space-y-2">
                         <Label htmlFor="name">Nama Barang</Label>
                         <Input
+                            className="mt-1"
                             id="name"
                             placeholder="Contoh: Laptop Dell XPS"
                             value={formData.name}
@@ -163,53 +168,38 @@ export function ProductDialog({
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="category">Kategori</Label>
-                        <Select
-                            value={
-                                formData.kategori_barang_id
-                                    ? String(formData.kategori_barang_id)
-                                    : ''
-                            }
-                            onValueChange={(value) =>
-                                setFormData({
-                                    ...formData,
-                                    kategori_barang_id: Number(value),
-                                })
-                            }
-                        >
-                            <SelectTrigger id="category">
-                                <SelectValue placeholder="Pilih kategori" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {initialCategories.map((cat) => (
-                                    <SelectItem
-                                        key={cat.id}
-                                        value={String(cat.id)}
-                                    >
-                                        {cat.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="price">Harga Jual (Rp)</Label>
-                            <Input
-                                id="price"
-                                type=""
-                                placeholder="0"
-                                value={formData.price}
-                                onChange={(e) =>
+                            <Label htmlFor="category">Kategori</Label>
+                            <Select
+                                value={
+                                    formData.kategori_barang_id
+                                        ? String(formData.kategori_barang_id)
+                                        : ''
+                                }
+                                onValueChange={(value) =>
                                     setFormData({
                                         ...formData,
-                                        price: Number(e.target.value),
+                                        kategori_barang_id: Number(value),
                                     })
                                 }
-                            />
+                            >
+                                <SelectTrigger id="category" className="mt-1">
+                                    <SelectValue placeholder="Pilih kategori" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {initialCategories.map((cat) => (
+                                        <SelectItem
+                                            key={cat.id}
+                                            value={String(cat.id)}
+                                        >
+                                            {cat.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="unit">Satuan</Label>
                             <Select
@@ -221,7 +211,7 @@ export function ProductDialog({
                                     })
                                 }
                             >
-                                <SelectTrigger id="unit">
+                                <SelectTrigger id="unit" className="mt-1">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

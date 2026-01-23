@@ -22,7 +22,7 @@ class UpdateKategoriBarangRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:100', 'unique:kategori_barangs,name'],
             'description' => ['nullable', 'string'],
         ];
     }
@@ -31,6 +31,7 @@ class UpdateKategoriBarangRequest extends FormRequest
     {
         return [
             'name.required' => 'Nama kategori wajib diisi.',
+            'name.unique' => 'Nama kategori tidak boleh duplikat.',
             'name.max' => 'Nama kategori maksimal 100 karakter.',
         ];
     }

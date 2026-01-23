@@ -23,10 +23,15 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateIna } from '@/lib/date';
-import { deletePurchase, transaction } from '@/lib/storage';
-import type { Category, Product, Sale, Salesman } from '@/lib/types';
+import type { Category, Product, Sale } from '@/lib/types';
 import { dashboard } from '@/routes';
-import { penjualan, searchPenjualan } from '@/routes/transaction';
+import {
+    destroy,
+    massal,
+    penjualan,
+    searchPenjualan,
+    store,
+} from '@/routes/transaction';
 import { BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import {
@@ -35,9 +40,7 @@ import {
     Package,
     Plus,
     Search,
-    ShoppingCart,
     Trash2,
-    TrendingUp,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -45,20 +48,12 @@ interface initialData {
     products: Product[];
     penjualans: Sale[];
     categories: Category[];
-    initialSalesmen: Salesman[];
-    totalPenjualan: String;
-    totalNilaiPenjualan: Number;
-    totalKeuntungan: String;
 }
 
 export default function SalesPage({
     products,
     penjualans,
-    initialSalesmen,
     categories,
-    totalPenjualan,
-    totalNilaiPenjualan,
-    totalKeuntungan,
 }: initialData) {
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -110,18 +105,27 @@ export default function SalesPage({
             const data = {
                 barang_id,
                 quantity,
-                unit_price: product.price,
                 type: 'Penjualan',
                 date_transaction: purchaseDate,
             };
 
-            transaction(data);
+            router.post(store().url, data, {
+                onSuccess: () => {
+                    toast({
+                        title: 'Berhasil',
+                        description: `Penjualan ${quantity} ${product.unit} telah dicatat`,
+                    });
+                },
+                onError: (err) => {
+                    toast({
+                        title: 'Gagal',
+                        description: Object.values(err)[0],
+                        variant: 'destructive',
+                    });
+                },
+            });
 
             setIsDialogOpen(false);
-            toast({
-                title: 'Berhasil',
-                description: `Penjualan ${quantity} ${product.unit} telah dicatat`,
-            });
         } catch (error) {
             toast({
                 title: 'Error',
@@ -132,43 +136,44 @@ export default function SalesPage({
     };
 
     const handleBulkSale = (items: any[]) => {
-        try {
-            items.forEach((item) => {
-                const product = products.find((p) => p.id == item.productId);
+        items.forEach((item) => {
+            const product = products.find((p) => p.id == item.productId);
 
-                if (!product) return;
+            if (!product) return;
 
-                if (item.quantity > product.quantity) {
-                    throw new Error(`Stok ${product.name} tidak cukup`);
-                }
+            if (item.quantity > product.quantity) {
+                toast({
+                    title: 'Gagal',
+                    description: `Stok ${product.name} tidak cukup`,
+                    variant: 'destructive',
+                });
+            }
+        });
 
-                const data = {
-                    barang_id: item.productId,
-                    quantity: item.quantity,
-                    unit_price: item.unitPrice,
-                    type: 'Penjualan',
-                    date_transaction: item.purchaseDate,
-                };
+        router.post(
+            massal().url,
+            {
+                items,
+                type: 'Penjualan',
+            },
+            {
+                onSuccess: (page) => {
+                    toast({
+                        title: 'Berhasil',
+                        description: page.props.flash.success,
+                    });
+                },
+                onError: (err) => {
+                    toast({
+                        title: 'Gagal',
+                        description: Object.values(err)[0],
+                        variant: 'destructive',
+                    });
+                },
+            },
+        );
 
-                transaction(data);
-            });
-
-            toast({
-                title: 'Berhasil',
-                description: `${items.length} penjualan massal telah dicatat`,
-            });
-
-            setBulkOpen(false);
-        } catch (error) {
-            toast({
-                title: 'Error',
-                description:
-                    error instanceof Error
-                        ? error.message
-                        : 'Terjadi kesalahan',
-                variant: 'destructive',
-            });
-        }
+        setBulkOpen(false);
     };
 
     const handleDelete = (id: Number) => {
@@ -176,11 +181,18 @@ export default function SalesPage({
     };
 
     const handleConfirmDelete = () => {
-        deletePurchase(deleteConfirm.id);
-        toast({
-            title: 'Berhasil',
-            description: 'Pembelian telah dihapus',
+        router.delete(destroy(deleteConfirm.id).url, {
+            onSuccess: () => {
+                toast({
+                    title: 'Berhasil',
+                    description: 'Penjualan telah dihapus',
+                });
+            },
+            onError: (err) => {
+                console.log(err);
+            },
         });
+
         setDeleteConfirm({ open: false, id: 0 });
     };
 
@@ -197,7 +209,7 @@ export default function SalesPage({
         },
     ];
 
-    const ITEMS_PER_PAGE = 20;
+    const ITEMS_PER_PAGE = 50;
     const totalPages = Math.ceil(filteredSales.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
@@ -245,74 +257,8 @@ export default function SalesPage({
                                 handelSearch(e.target.value);
                                 setCurrentPage(1);
                             }}
-                            className="pl-10"
+                            className="bg-gray-50 pl-10"
                         />
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    {/* Total Penjualan Card - Green Gradient */}
-                    <div className="transition-smooth relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-green-50 to-green-100/50 shadow-sm hover:shadow-md dark:from-green-950/30 dark:to-green-900/20">
-                        <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-green-500 to-green-600"></div>
-                        <div className="p-6">
-                            <div className="mb-4 flex items-center justify-between">
-                                <h3 className="text-sm font-medium text-muted-foreground">
-                                    Total Penjualan
-                                </h3>
-                                <div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/40">
-                                    <ShoppingCart className="h-5 w-5 text-green-600 dark:text-green-400" />
-                                </div>
-                            </div>
-                            <div className="text-3xl font-bold text-foreground">
-                                {totalPenjualan}
-                            </div>
-                            <p className="mt-2 text-xs text-muted-foreground">
-                                Transaksi
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Total Pendapatan Card - Emerald Gradient */}
-                    <div className="transition-smooth relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-emerald-50 to-emerald-100/50 shadow-sm hover:shadow-md dark:from-emerald-950/30 dark:to-emerald-900/20">
-                        <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-emerald-500 to-emerald-600"></div>
-                        <div className="p-6">
-                            <div className="mb-4 flex items-center justify-between">
-                                <h3 className="text-sm font-medium text-muted-foreground">
-                                    Total Nilai Penjualan
-                                </h3>
-                                <div className="rounded-lg bg-emerald-100 p-2 dark:bg-emerald-900/40">
-                                    <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                                </div>
-                            </div>
-                            <div className="text-3xl font-bold text-foreground">
-                                Rp{' '}
-                                {(totalNilaiPenjualan / 1_000_000).toFixed(1)}jt
-                            </div>
-                            <p className="mt-2 text-xs text-muted-foreground">
-                                Dari penjualan
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Rata-rata Transaksi Card - Lime Gradient */}
-                    <div className="transition-smooth relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-lime-50 to-lime-100/50 shadow-sm hover:shadow-md dark:from-lime-950/30 dark:to-lime-900/20">
-                        <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-lime-500 to-lime-600"></div>
-                        <div className="p-6">
-                            <div className="mb-4 flex items-center justify-between">
-                                <h3 className="text-sm font-medium text-muted-foreground">
-                                    Total Pendapatan
-                                </h3>
-                                <div className="rounded-lg bg-lime-100 p-2 dark:bg-lime-900/40">
-                                    <ShoppingCart className="h-5 w-5 text-lime-600 dark:text-lime-400" />
-                                </div>
-                            </div>
-                            <div className="text-3xl font-bold text-foreground">
-                                Rp {(totalKeuntungan / 1_000_000).toFixed(1)}jt
-                            </div>
-                            <p className="mt-2 text-xs text-muted-foreground">
-                                Per transaksi
-                            </p>
-                        </div>
                     </div>
                 </div>
 
@@ -361,12 +307,6 @@ export default function SalesPage({
                                         <TableHead className="text-right">
                                             Jumlah
                                         </TableHead>
-                                        <TableHead className="text-right">
-                                            Harga Satuan
-                                        </TableHead>
-                                        <TableHead className="text-right">
-                                            Total
-                                        </TableHead>
                                         <TableHead className="text-center">
                                             Aksi
                                         </TableHead>
@@ -406,21 +346,6 @@ export default function SalesPage({
                                                 <TableCell className="text-right">
                                                     {purchase.quantity}
                                                 </TableCell>
-                                                <TableCell className="text-right">
-                                                    Rp.
-                                                    {' ' +
-                                                        purchase.unit_price?.toLocaleString(
-                                                            'id-ID',
-                                                        )}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    Rp.
-                                                    {' ' +
-                                                        purchase.total_price?.toLocaleString(
-                                                            'id-ID',
-                                                        )}
-                                                </TableCell>
-
                                                 <TableCell className="text-center">
                                                     <Button
                                                         variant="ghost"
@@ -523,7 +448,7 @@ export default function SalesPage({
                     onOpenChange={setBulkOpen}
                     products={products}
                     categories={categories}
-                    initialSalesmen={initialSalesmen}
+                    initialSalesmen={[]}
                     type="sale"
                     onSubmit={handleBulkSale}
                 />

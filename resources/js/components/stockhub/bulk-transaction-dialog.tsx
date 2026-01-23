@@ -175,10 +175,10 @@ export function BulkTransactionDialog({
         onSubmit(items);
         setItems([]);
         onOpenChange(false);
-        // toast({
-        //     title: 'Berhasil',
-        //     description: `${items.length} item telah ditambahkan`,
-        // });
+        toast({
+            title: 'Berhasil',
+            description: `${items.length} item telah ditambahkan`,
+        });
     };
 
     const getFilteredProducts = (itemId: string) => {
@@ -252,12 +252,17 @@ export function BulkTransactionDialog({
                                     <TableHead className="text-right">
                                         Jumlah
                                     </TableHead>
-                                    <TableHead className="text-right">
-                                        Harga Satuan
-                                    </TableHead>
-                                    <TableHead className="text-right">
-                                        Total
-                                    </TableHead>
+                                    {type === 'purchase' && (
+                                        <>
+                                            <TableHead className="text-center">
+                                                Harga Satuan
+                                            </TableHead>
+                                            <TableHead className="text-right">
+                                                Total
+                                            </TableHead>
+                                        </>
+                                    )}
+
                                     <TableHead className="text-center">
                                         Aksi
                                     </TableHead>
@@ -396,7 +401,7 @@ export function BulkTransactionDialog({
                                                     </TableCell>
                                                 )}
 
-                                                <TableCell>
+                                                <TableCell className="flex justify-end">
                                                     <Input
                                                         type="number"
                                                         min="1"
@@ -411,22 +416,12 @@ export function BulkTransactionDialog({
                                                                 ),
                                                             )
                                                         }
-                                                        className="w-20 text-right"
+                                                        className="w-20 text-center"
                                                     />
                                                 </TableCell>
 
-                                                <TableCell>
-                                                    {type === 'sale' ? (
-                                                        <span>
-                                                            Rp.
-                                                            {' ' +
-                                                                getProductPrice(
-                                                                    item.productId,
-                                                                ).toLocaleString(
-                                                                    'id-ID',
-                                                                )}
-                                                        </span>
-                                                    ) : (
+                                                {type === 'purchase' && (
+                                                    <TableCell className="justify-end">
                                                         <Input
                                                             type=""
                                                             min="0"
@@ -447,27 +442,20 @@ export function BulkTransactionDialog({
                                                             className="w-32 text-right"
                                                             placeholder="0"
                                                         />
-                                                    )}
-                                                </TableCell>
+                                                    </TableCell>
+                                                )}
 
-                                                <TableCell className="text-right font-semibold">
-                                                    Rp.{' '}
-                                                    {type === 'sale'
-                                                        ? (
-                                                              item.quantity *
-                                                              getProductPrice(
-                                                                  item.productId,
-                                                              )
-                                                          ).toLocaleString(
-                                                              'id-ID',
-                                                          )
-                                                        : (
-                                                              item.quantity *
-                                                              item.unitPrice
-                                                          ).toLocaleString(
-                                                              'id-ID',
-                                                          )}
-                                                </TableCell>
+                                                {type === 'purchase' && (
+                                                    <TableCell className="text-right font-semibold">
+                                                        {'Rp. ' +
+                                                            (
+                                                                item.quantity *
+                                                                item.unitPrice
+                                                            ).toLocaleString(
+                                                                'id-ID',
+                                                            )}
+                                                    </TableCell>
+                                                )}
                                                 <TableCell className="text-center">
                                                     <Button
                                                         variant="ghost"

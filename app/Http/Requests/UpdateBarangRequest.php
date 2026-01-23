@@ -22,10 +22,8 @@ class UpdateBarangRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // 'code' => ['required', 'string', 'max:50', 'unique:barangs,code'],
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', 'unique:barangs,name'],
             'kategori_barang_id' => ['required', 'exists:kategori_barangs,id'],
-            'price' => ['required', 'numeric', 'min:0'],
             'unit' => ['required', 'string', 'max:50'],
         ];
     }
@@ -33,12 +31,10 @@ class UpdateBarangRequest extends FormRequest
     public function messages(): array
     {
         return [
-            // 'code.required' => 'Kode produk wajib diisi.',
-            // 'code.unique' => 'Kode produk sudah digunakan.',
             'name.required' => 'Nama produk wajib diisi.',
             'kategori_barang_id.required' => 'Kategori produk wajib diisi.',
             'kategori_barang_id.exists' => 'Kategori tidak ditemukan.',
-            'price.numeric' => 'Harga harus berupa angka.',
+            'name.unique' => 'Nama produk tidak boleh duplikat',
             'unit.required' => 'Satuan produk wajib diisi.',
         ];
     }

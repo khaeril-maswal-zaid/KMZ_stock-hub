@@ -20,11 +20,11 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
-import { deleteProduct } from '@/lib/storage';
-import type { Category, Product } from '@/lib/types';
+import type { Category, Product, Salesman } from '@/lib/types';
 import { index } from '@/routes/categorie';
+import { destroy, riwayat } from '@/routes/product';
 import { BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     ChevronLeft,
     ChevronRight,
@@ -39,9 +39,14 @@ interface initialData {
     initialCategories: Category[];
     products: Product[];
     categories: Category[];
+    initialSalesmen: Salesman[];
 }
 
-export default function ProductsPage({ products, categories }: initialData) {
+export default function ProductsPage({
+    products,
+    categories,
+    initialSalesmen,
+}: initialData) {
     const [searchTerm, setSearchTerm] = useState('');
     const [stockFilter, setStockFilter] = useState<'all' | 'empty' | 'ready'>(
         'all',
@@ -61,12 +66,15 @@ export default function ProductsPage({ products, categories }: initialData) {
     };
 
     const handleConfirmDelete = () => {
-        deleteProduct(deleteConfirm.code);
-
-        toast({
-            title: 'Berhasil',
-            description: 'Barang telah dihapus',
+        router.delete(destroy(deleteConfirm.code).url, {
+            onSuccess: () => {
+                toast({
+                    title: 'Berhasil',
+                    description: 'Barang telah dihapus',
+                });
+            },
         });
+
         setDeleteConfirm({ open: false, code: '' });
     };
 
@@ -109,7 +117,11 @@ export default function ProductsPage({ products, categories }: initialData) {
         },
     ];
 
-    const ITEMS_PER_PAGE = 20;
+    const handleRiwayat = (codeSales: string, codeBarang: string) => {
+        router.get(riwayat.url({ barang: codeBarang }), { sales: codeSales });
+    };
+
+    const ITEMS_PER_PAGE = 50;
     const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
@@ -208,9 +220,6 @@ export default function ProductsPage({ products, categories }: initialData) {
                                             Kategori
                                         </th>
                                         <th className="px-4 py-3 text-right font-semibold">
-                                            Harga Jual
-                                        </th>
-                                        <th className="px-4 py-3 text-right font-semibold">
                                             Stok
                                         </th>
                                         <th className="px-4 py-3 text-center font-semibold">
@@ -233,14 +242,6 @@ export default function ProductsPage({ products, categories }: initialData) {
                                             <td className="px-4 py-3 text-muted-foreground">
                                                 {product.category?.name}
                                             </td>
-
-                                            <td className="px-4 py-3 text-right">
-                                                Rp.
-                                                {' ' +
-                                                    product.price?.toLocaleString(
-                                                        'id-ID',
-                                                    )}
-                                            </td>
                                             <td
                                                 className={`px-4 py-3 text-right font-bold ${
                                                     product.quantity === 0
@@ -255,6 +256,41 @@ export default function ProductsPage({ products, categories }: initialData) {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex justify-center gap-2">
+                                                    <Select
+                                                        onValueChange={(
+                                                            value,
+                                                        ) =>
+                                                            handleRiwayat(
+                                                                value,
+                                                                String(
+                                                                    product.code,
+                                                                ),
+                                                            )
+                                                        }
+                                                    >
+                                                        <SelectTrigger className="w-full bg-gray-50 md:w-52">
+                                                            <SelectValue placeholder="Lihat Riwayat Pemesanan" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {initialSalesmen.map(
+                                                                (cat) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            cat.code
+                                                                        }
+                                                                        value={String(
+                                                                            cat.code,
+                                                                        )}
+                                                                    >
+                                                                        {
+                                                                            cat.name
+                                                                        }
+                                                                    </SelectItem>
+                                                                ),
+                                                            )}
+                                                        </SelectContent>
+                                                    </Select>
+
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
@@ -265,6 +301,7 @@ export default function ProductsPage({ products, categories }: initialData) {
                                                     >
                                                         <Edit2 className="h-4 w-4" />
                                                     </Button>
+
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"

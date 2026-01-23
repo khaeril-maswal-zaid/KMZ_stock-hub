@@ -24,13 +24,13 @@ class StoreTransaksiRequest extends FormRequest
         $rules = [
             'barang_id' => 'required|exists:barangs,id',
             'quantity' => 'required|integer|min:1',
-            'unit_price' => 'required|numeric|min:1',
             'type' => 'required|in:Penjualan,Pembelian',
             'date_transaction' => 'required|date|after_or_equal:2000-01-01'
         ];
 
         // Jika type = Pembelian, maka salesman_id wajib dan harus valid
         if ($this->input('type') === 'Pembelian') {
+            $rules['unit_price'] = 'required|numeric|min:1';
             $rules['salesman'] = 'required|exists:sales,id';
         }
 

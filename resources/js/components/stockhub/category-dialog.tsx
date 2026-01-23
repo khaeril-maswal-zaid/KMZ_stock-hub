@@ -14,8 +14,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { addCategory, updateCategory } from '@/lib/storage';
 import type { Category } from '@/lib/types';
+import { store, update } from '@/routes/categorie';
+import { router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 interface CategoryDialogProps {
@@ -70,17 +71,36 @@ export function CategoryDialog({
             };
 
             if (category) {
-                updateCategory(Number(category.id), data);
-                toast({
-                    title: 'Berhasil',
-                    description: 'Kategori telah diperbarui',
+                router.put(update(category.id).url, data, {
+                    onSuccess: () => {
+                        toast({
+                            title: 'Berhasil',
+                            description: 'Kategori telah diperbarui',
+                        });
+                    },
+                    onError: (err) => {
+                        toast({
+                            title: 'Gagal',
+                            description: Object.values(err)[0],
+                            variant: 'destructive',
+                        });
+                    },
                 });
             } else {
-                addCategory(data);
-
-                toast({
-                    title: 'Berhasil',
-                    description: 'Kategori telah ditambahkan',
+                router.post(store().url, data, {
+                    onSuccess: () => {
+                        toast({
+                            title: 'Berhasil',
+                            description: 'Kategori telah ditambahkan',
+                        });
+                    },
+                    onError: (err) => {
+                        toast({
+                            title: 'Gagal',
+                            description: Object.values(err)[0],
+                            variant: 'destructive',
+                        });
+                    },
                 });
             }
             onOpenChange(false);
@@ -113,6 +133,7 @@ export function CategoryDialog({
                         <Label htmlFor="name">Nama Kategori</Label>
                         <Input
                             id="name"
+                            className="mt-1"
                             placeholder="Contoh: Elektronik"
                             value={formData.name}
                             onChange={(e) =>
@@ -130,6 +151,7 @@ export function CategoryDialog({
                         </Label>
                         <Textarea
                             id="description"
+                            className="mt-1"
                             placeholder="Deskripsi kategori..."
                             value={formData.description}
                             onChange={(e) =>

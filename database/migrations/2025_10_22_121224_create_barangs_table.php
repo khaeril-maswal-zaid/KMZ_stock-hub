@@ -14,9 +14,8 @@ return new class extends Migration
         Schema::create('barangs', function (Blueprint $table) {
             $table->id();
             $table->string('code')->unique();
-            $table->string('name');
+            $table->string('name')->unique();
             $table->foreignId('kategori_barang_id')->nullable()->constrained()->nullOnDelete();
-            $table->decimal('price', 15, 2)->default(0);
             $table->integer('quantity')->default(0);
             $table->string('unit', 50);
             $table->timestamps();

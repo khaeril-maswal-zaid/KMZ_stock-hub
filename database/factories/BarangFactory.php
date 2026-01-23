@@ -19,9 +19,8 @@ class BarangFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'name' => fake()->unique()->name(),
             'kategori_barang_id' => KategoriBarang::inRandomOrder()->first()?->id ?? 1,
-            'price' => fake()->randomFloat(2, 10000, 1000000),
             'quantity' => fake()->numberBetween(1, 500),
             'unit' => fake()->randomElement(['KOLI', 'PCS']),
         ];

@@ -12,14 +12,12 @@ import {
 import { dashboard } from '@/routes';
 import { report } from '@/routes/';
 import { index as categorieIndex } from '@/routes/categorie';
-import { index as productIndex } from '@/routes/product';
 import { index as salesmenIndex } from '@/routes/salesmen';
 import { pembelian, penjualan } from '@/routes/transaction';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import {
     BarChart3,
-    LayoutGrid,
     Package,
     ShoppingCart,
     Tag,
@@ -30,13 +28,13 @@ import AppLogo from './app-logo';
 import { NavFooter } from './nav-footer';
 
 const mainNavItems: NavItem[] = [
+    // {
+    //     title: 'Dashboard',
+    //     href: dashboard(),
+    //     icon: LayoutGrid,
+    // },
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        href: productIndex.url(),
+        href: dashboard.url(),
         title: 'Barang',
         icon: Package,
     },

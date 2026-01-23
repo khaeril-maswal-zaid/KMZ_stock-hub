@@ -19,16 +19,6 @@ class TransaksiController extends Controller
      */
     public function pembelian($query = null): Response
     {
-        // Total Barang (jumlah item unik)
-        $totalPembelian = Transaksi::where('type', 'Pembelian')->count();
-
-        // Total Pembelian Tahun Ini
-        $totalNilaiPembelian = Transaksi::where('type', 'Pembelian')
-            ->sum('total_price');
-
-        // Total Stok (akumulasi semua quantity barang)
-        $totalBarang = Barang::count();
-
         $pembelians = Transaksi::select(['id', 'quantity', 'sales_id', 'barang_id', 'unit_price', 'total_price', 'date_transaction'])
             ->with([
                 'barang:id,name,code,kategori_barang_id',
@@ -49,10 +39,7 @@ class TransaksiController extends Controller
             'categories' => KategoriBarang::select(['id', 'name'])->orderBy('name', 'asc')->get(),
             'initialSalesmen' => Sales::select('id', 'name')->orderBy('name', 'asc')->get(),
             'products' => Barang::select(['id', 'code', 'name', 'kategori_barang_id', 'quantity', 'unit'])->with('category:id,name')->get(),
-            'pembelians' => $pembelians->take(100)->get(),
-            'totalPembelian' => $totalPembelian,
-            'totalNilaiPembelian' => $totalNilaiPembelian,
-            'totalBarang' => $totalBarang,
+            'pembelians' => $pembelians->take(500)->get(),
         ];
 
         return Inertia::render('purchases/page', $data);
@@ -60,16 +47,6 @@ class TransaksiController extends Controller
 
     public function penjualan($query = null): Response
     {
-        // Total Barang (jumlah item unik)
-        $totalPenjualan = Transaksi::where('type', 'Penjualan')->count();
-
-        $totalNilaiPenjualan = Transaksi::where('type', 'Penjualan')
-            ->sum('total_price');
-
-        // Total Pembelian Tahun Ini
-        $totalNilaiPembelian = Transaksi::where('type', 'Pembelian')
-            ->sum('total_price');
-
         $penjualans = Transaksi::select(['id', 'quantity', 'barang_id', 'unit_price', 'total_price', 'date_transaction'])
             ->with([
                 'barang:id,name,code,kategori_barang_id',
@@ -85,14 +62,10 @@ class TransaksiController extends Controller
             });
         }
 
-
         $data = [
             'categories' => KategoriBarang::select(['id', 'name'])->orderBy('name', 'asc')->get(),
             'products' => Barang::select(['id', 'code', 'name', 'kategori_barang_id', 'quantity', 'price', 'unit'])->with('category:id,name')->get(),
-            'penjualans'  => $penjualans->take(100)->get(),
-            'totalPenjualan' => $totalPenjualan,
-            'totalNilaiPenjualan' => $totalNilaiPenjualan,
-            'totalKeuntungan' => $totalNilaiPenjualan - $totalNilaiPembelian,
+            'penjualans'  => $penjualans->take(500)->get(),
         ];
 
         return Inertia::render('selling/page', $data);
@@ -143,6 +116,40 @@ class TransaksiController extends Controller
             ->route('transaction.pembelian')
             ->with('success', "Berhasil memproses " . count($request->items) . " transaksi.");
     }
+
+    public function storeMassal(Request $request)
+    {
+        $forCount = [];
+        foreach ($request->items as $key => $value) {
+            $barang = Barang::findOrFail($value['productId']);
+
+            $newQuantity = $barang->quantity + ($request->type === 'Pembelian' ? $value['quantity'] : -$value['quantity']);
+
+            if ($newQuantity < 0) {
+                return back()->withErrors(['quantity' => 'Stok tidak mencukupi untuk transaksi ini.']);
+            }
+
+            $barang->update([
+                'quantity' => $newQuantity
+            ]);
+
+            $changed = Transaksi::create([
+                'barang_id' => $barang->id,
+                'sales_id' => $request->type == 'Pembelian' ? $value['salesId'] : null,
+                'quantity' => $value['quantity'],
+                'unit_price' => $request->type == 'Pembelian' ? $value['unitPrice'] : null,
+                'total_price' => $request->type == 'Pembelian' ? $value['quantity'] * $value['unitPrice'] : null,
+                'type' => $request->type,
+                'date_transaction' => date('Y-m-d H:i:s', strtotime($value['purchaseDate'])),
+            ]);
+
+            $forCount[] = $changed->id;
+        }
+
+        return back()->with('success',  count($forCount) . ' ' . $request->type . ' massal dicatat.');
+    }
+
+
 
 
     /**
