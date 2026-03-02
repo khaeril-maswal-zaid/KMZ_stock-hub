@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Transaksi;
-use App\Http\Requests\StoreTransaksiRequest;
 use App\Http\Requests\UpdateTransaksiRequest;
 use App\Models\Barang;
 use App\Models\KategoriBarang;
+use Illuminate\Support\Facades\DB;
 use App\Models\Sales;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -26,7 +26,7 @@ class TransaksiController extends Controller
                 'sales'
             ])
             ->where('type', 'Pembelian')
-            ->latest();
+            ->orderBy('date_transaction', 'asc');
 
         if ($query) {
             $pembelians->whereHas('barang', function ($q) use ($query) {
@@ -53,7 +53,7 @@ class TransaksiController extends Controller
                 'barang.category:id,name'
             ])
             ->where('type', 'Penjualan')
-            ->latest();
+            ->orderBy('date_transaction', 'asc');
 
         if ($query) {
             $penjualans->whereHas('barang', function ($q) use ($query) {
@@ -117,36 +117,79 @@ class TransaksiController extends Controller
             ->with('success', "Berhasil memproses " . count($request->items) . " transaksi.");
     }
 
+
+
     public function storeMassal(Request $request)
     {
+        // 1. Validasi
+        $validated = $request->validate([
+            'type' => ['required', 'in:Pembelian,Pengeluaran'],
+
+            'items' => ['required', 'array', 'min:1'],
+
+            'items.*.productId'    => ['required', 'integer', 'exists:barangs,id'],
+            'items.*.quantity'     => ['required', 'integer', 'min:1'],
+            'items.*.unitPrice'    => ['nullable', 'integer', 'min:0'],
+            'items.*.salesId'      => ['nullable', 'integer'],
+            'items.*.purchaseDate' => ['required', 'date'],
+        ]);
+
         $forCount = [];
-        foreach ($request->items as $key => $value) {
-            $barang = Barang::findOrFail($value['productId']);
 
-            $newQuantity = $barang->quantity + ($request->type === 'Pembelian' ? $value['quantity'] : -$value['quantity']);
+        // 2. Gunakan DB transaction (biar aman kalau salah satu gagal)
+        DB::beginTransaction();
 
-            if ($newQuantity < 0) {
-                return back()->withErrors(['quantity' => 'Stok tidak mencukupi untuk transaksi ini.']);
+        try {
+            foreach ($validated['items'] as $item) {
+
+                $barang = Barang::lockForUpdate()->findOrFail($item['productId']);
+
+                // Hitung stok baru
+                $newQuantity = $barang->quantity + (
+                    $validated['type'] === 'Pembelian'
+                    ? $item['quantity']
+                    : -$item['quantity']
+                );
+
+                // Cek stok minus
+                if ($newQuantity < 0) {
+                    DB::rollBack();
+                    return back()->withErrors([
+                        'quantity' => "Stok {$barang->nama_barang} tidak mencukupi."
+                    ]);
+                }
+
+                // Update stok
+                $barang->update([
+                    'quantity' => $newQuantity
+                ]);
+
+                // Simpan transaksi
+                $transaksi = Transaksi::create([
+                    'barang_id'        => $barang->id,
+                    'sales_id'         => $validated['type'] === 'Pembelian' ? $item['salesId'] : null,
+                    'quantity'         => $item['quantity'],
+                    'unit_price'       => $validated['type'] === 'Pembelian' ? $item['unitPrice'] : null,
+                    'total_price'      => $validated['type'] === 'Pembelian'
+                        ? $item['quantity'] * $item['unitPrice']
+                        : null,
+                    'type'             => $validated['type'],
+                    'date_transaction' => date('Y-m-d H:i:s', strtotime($item['purchaseDate'])),
+                ]);
+
+                $forCount[] = $transaksi->id;
             }
 
-            $barang->update([
-                'quantity' => $newQuantity
-            ]);
+            DB::commit();
 
-            $changed = Transaksi::create([
-                'barang_id' => $barang->id,
-                'sales_id' => $request->type == 'Pembelian' ? $value['salesId'] : null,
-                'quantity' => $value['quantity'],
-                'unit_price' => $request->type == 'Pembelian' ? $value['unitPrice'] : null,
-                'total_price' => $request->type == 'Pembelian' ? $value['quantity'] * $value['unitPrice'] : null,
-                'type' => $request->type,
-                'date_transaction' => date('Y-m-d H:i:s', strtotime($value['purchaseDate'])),
-            ]);
-
-            $forCount[] = $changed->id;
+            return back()->with(
+                'success',
+                count($forCount) . ' transaksi ' . $validated['type'] . ' berhasil dicatat.'
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors('Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        return back()->with('success',  count($forCount) . ' ' . $request->type . ' massal dicatat.');
     }
 
 

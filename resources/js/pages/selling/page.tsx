@@ -2,7 +2,6 @@
 
 import { BulkTransactionDialog } from '@/components/stockhub/bulk-transaction-dialog';
 import { DeleteConfirmDialog } from '@/components/stockhub/delete-confirm-dialog';
-import { TransactionDialog } from '@/components/stockhub/transaction-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -231,14 +230,6 @@ export default function SalesPage({
                     <div className="flex gap-2">
                         <Button
                             onClick={() => setBulkOpen(true)}
-                            variant="outline"
-                            className="gap-2"
-                        >
-                            <Plus className="h-4 w-4" />
-                            Penjualan Massal
-                        </Button>
-                        <Button
-                            onClick={() => setIsDialogOpen(true)}
                             className="gap-2"
                         >
                             <Plus className="h-4 w-4" />
@@ -451,22 +442,6 @@ export default function SalesPage({
                     initialSalesmen={[]}
                     type="sale"
                     onSubmit={handleBulkSale}
-                />
-
-                <TransactionDialog
-                    initialSalesmen={[]}
-                    open={isDialogOpen}
-                    onOpenChange={setIsDialogOpen}
-                    products={products}
-                    categories={categories}
-                    type="sale"
-                    onSubmit={(
-                        productId,
-                        quantity,
-                        _salesman,
-                        _unitPrice,
-                        purchaseDate,
-                    ) => handleAddSale(productId, quantity, purchaseDate)}
                 />
             </div>
         </AppLayout>

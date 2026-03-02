@@ -403,7 +403,7 @@ export function BulkTransactionDialog({
 
                                                 <TableCell className="flex justify-end">
                                                     <Input
-                                                        type="number"
+                                                        type=""
                                                         min="1"
                                                         value={item.quantity}
                                                         onChange={(e) =>
