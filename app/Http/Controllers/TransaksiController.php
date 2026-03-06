@@ -26,7 +26,7 @@ class TransaksiController extends Controller
                 'sales'
             ])
             ->where('type', 'Pembelian')
-            ->orderBy('date_transaction', 'asc');
+            ->orderBy('date_transaction', 'desc');
 
         if ($query) {
             $pembelians->whereHas('barang', function ($q) use ($query) {
@@ -53,7 +53,7 @@ class TransaksiController extends Controller
                 'barang.category:id,name'
             ])
             ->where('type', 'Penjualan')
-            ->orderBy('date_transaction', 'asc');
+            ->orderBy('date_transaction', 'desc');
 
         if ($query) {
             $penjualans->whereHas('barang', function ($q) use ($query) {
