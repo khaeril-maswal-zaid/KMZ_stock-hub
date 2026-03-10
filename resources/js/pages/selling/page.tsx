@@ -29,7 +29,6 @@ import {
     massal,
     penjualan,
     searchPenjualan,
-    store,
 } from '@/routes/transaction';
 import { BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
@@ -81,58 +80,6 @@ export default function SalesPage({
     }>({ open: false, id: 0 });
 
     const { toast } = useToast();
-
-    const handleAddSale = (
-        barang_id: string,
-        quantity: number,
-        purchaseDate: Date,
-    ) => {
-        const product = products.find((p: any) => p.id === barang_id);
-
-        if (!product) return;
-
-        if (quantity > product.quantity) {
-            toast({
-                title: 'Error',
-                description: 'Stok tidak cukup',
-                variant: 'destructive',
-            });
-            return;
-        }
-
-        try {
-            const data = {
-                barang_id,
-                quantity,
-                type: 'Penjualan',
-                date_transaction: purchaseDate,
-            };
-
-            router.post(store().url, data, {
-                onSuccess: () => {
-                    toast({
-                        title: 'Berhasil',
-                        description: `Penjualan ${quantity} ${product.unit} telah dicatat`,
-                    });
-                },
-                onError: (err) => {
-                    toast({
-                        title: 'Gagal',
-                        description: Object.values(err)[0],
-                        variant: 'destructive',
-                    });
-                },
-            });
-
-            setIsDialogOpen(false);
-        } catch (error) {
-            toast({
-                title: 'Error',
-                description: 'Terjadi kesalahan',
-                variant: 'destructive',
-            });
-        }
-    };
 
     const handleBulkSale = (items: any[]) => {
         items.forEach((item) => {

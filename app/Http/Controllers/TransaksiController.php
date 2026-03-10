@@ -84,6 +84,16 @@ class TransaksiController extends Controller
      */
     public function store(Request $request)
     {
+        $request->validate([
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.barang_id' => ['required', 'integer', 'exists:barangs,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.unit_price' => ['nullable', 'integer', 'min:0'],
+            'items.*.salesman' => ['nullable', 'integer'],
+            'items.*.type' => ['required', 'in:Pembelian,Penjualan'],
+            'items.*.date_transaction' => ['required', 'date'],
+        ]);
+
         foreach ($request->items as $item) {
             $barang = Barang::findOrFail($item['barang_id']);
 
@@ -123,7 +133,7 @@ class TransaksiController extends Controller
     {
         // 1. Validasi
         $validated = $request->validate([
-            'type' => ['required', 'in:Pembelian,Pengeluaran'],
+            'type' => ['required', 'in:Pembelian,Penjualan'],
 
             'items' => ['required', 'array', 'min:1'],
 
@@ -191,7 +201,6 @@ class TransaksiController extends Controller
             return back()->withErrors('Terjadi kesalahan: ' . $e->getMessage());
         }
     }
-
 
 
 
